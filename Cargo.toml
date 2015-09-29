@@ -1,0 +1,7 @@
+[package]
+name = "raydiancy"
+version = "0.1.0"
+authors = ["Fabian Zaiser <fabianzaiser@gmail.com>"]
+
+[dependencies]
+image = "*"
