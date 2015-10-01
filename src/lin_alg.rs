@@ -117,6 +117,10 @@ impl Vec3 {
         f64::sqrt(self * self)
     }
 
+    pub fn norm2(self) -> f64 {
+        self * self
+    }
+
     pub fn normalize(self) -> Vec3 {
         self / self.norm()
     }
