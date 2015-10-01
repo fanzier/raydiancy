@@ -76,6 +76,73 @@ impl Surface for Sphere {
     }
 }
 
+/// Representation of a plane.
+pub struct Plane {
+    /// Normal vector of the plane.
+    pub normal: Vec3,
+    /// The offset is normal * x for any point x on the plane.
+    pub offset: f64,
+    /// The material of the plane.
+    pub material: Material
+}
+
+impl Surface for Plane {
+    fn intersect(&self, ray: Ray) -> Option<Intersection> {
+        let nd = self.normal * ray.dir;
+        if f64::abs(nd) < EPS {
+            return None
+        }
+        let t = (self.offset - self.normal * ray.origin) / nd;
+        if t < EPS {
+            return None
+        }
+        Some(Intersection { t: t, normal: self.normal, material: self.material })
+    }
+}
+
+pub struct Triangle {
+    // First point of the triangle.
+    pub a: Vec3,
+    // Second point of the triangle.
+    pub b: Vec3,
+    // Third point of the triangle.
+    pub c: Vec3,
+    // The material of the triangle.
+    pub material: Material
+}
+
+impl Surface for Triangle {
+    /// Intersects a ray with a triangle. Triangles are *one-sided*. The backface is not rendered.
+    fn intersect(&self, ray: Ray) -> Option<Intersection> {
+        let d = ray.dir;
+        let e = self.b - self.a;
+        let f = self.c - self.a;
+        let g = ray.origin - self.a;
+        let p = d.cross(f);
+        let det = p * e;
+        // If the determinant is negative, we hit the backside of the triangle.
+        // If the determinant is close to 0, the ray misses the triangle.
+        // In both cases, we don't want an intersection.
+        if det < EPS {
+            return None
+        }
+        let u = p * g;
+        if u < 0.0 || u > det {
+            return None
+        }
+        let q = g.cross(e);
+        let v = q * d;
+        if v < 0.0 || u + v > det {
+            return None
+        }
+        let t = q * f / det;
+        if t < EPS {
+            return None
+        }
+        Some(Intersection { t: t, normal: e.cross(f).normalize(), material: self.material })
+    }
+}
+
 /// Contains information about camera, like position, direction etc.
 pub struct Camera {
     /// The position of the camera.
