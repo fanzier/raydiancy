@@ -31,8 +31,18 @@ impl Ray {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Material {
-    /// Color of the material
-    pub color: Color
+    /// Color of the material.
+    pub color: Color,
+    /// Ambient reflection constant.
+    pub ambient: f64,
+    /// Diffuse reflection constant.
+    pub diffuse: f64,
+    /// Specular reflection constant.
+    pub specular: f64,
+    /// Shininess/specular exponent.
+    /// When it is large, the specular highlight is small.
+    /// It is larger for smoother and mirror-like surfaces.
+    pub shininess: f64
 }
 
 /// Contains information about the intersection of a ray and an object.
@@ -161,12 +171,22 @@ pub struct Camera {
     pub height: usize
 }
 
+/// Information about a light source.
+pub struct LightSource {
+    pub pos: Vec3,
+    pub col: Color
+}
+
 /// Contains all the information about a scene: camera and objects.
 pub struct Scene {
     /// The camera in the scene.
     pub camera: Camera,
     /// The objects in the scene.
-    pub objects: Vec<Box<Surface>>
+    pub objects: Vec<Box<Surface>>,
+    /// The lights in the scene.
+    pub lights: Vec<LightSource>,
+    /// The color of ambient light in the scene.
+    pub ambient_color: Color
 }
 
 impl Scene {
@@ -202,8 +222,31 @@ impl Scene {
             }
         }
         match nearest {
-            Some(intersection) => intersection.material.color,
-            None => Color::new(0.0,0.0,0.0,0.0)
+            Some(ref intersection) => ray.intensity * self.shade(ray, intersection),
+            None => Color::transparent()
         }
+    }
+
+    /// Determines the color of an intersection point.
+    fn shade(&self, ray: Ray, inter: &Intersection) -> Color {
+        let mat = inter.material;
+        // Start with the ambient color of the object.
+        let mut color = mat.ambient * (self.ambient_color * mat.color);
+        let point = ray.origin + inter.t * ray.dir;
+        // Add the illuminance of every light up to get the final color:
+        for light in self.lights.iter() {
+            // Compute the diffuse reflection:
+            let light_dir = (light.pos - point).normalize();
+            let lambert_coefficient = mat.diffuse * f64::max(0.0, light_dir * inter.normal);
+            let lambert = lambert_coefficient * (light.col * mat.color);
+            // Compute the specular reflection (Blinn-Phong):
+            let origin_dir = (ray.origin - point).normalize();
+            let halfway = (light_dir + origin_dir).normalize();
+            let specular_coefficient = mat.specular * f64::max(0.0, halfway * inter.normal).powf(mat.shininess);
+            let specular = specular_coefficient * light.col;
+            // Add these two terms to overall color:
+            color = color + lambert + specular;
+        }
+        return color;
     }
 }

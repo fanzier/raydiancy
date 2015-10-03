@@ -1,26 +1,60 @@
 extern crate image;
 
+use std::ops;
 use std::path::Path;
 use std::slice;
 use self::image::*;
 
-/// Represents an RGBA color, each coordinate ranges between 0.0 and 1.0.
+/// Represents an RGB color with transparency, each coordinate ranges between 0.0 and 1.0.
 #[derive(Debug, Copy, Clone)]
 pub struct Color {
     pub r: f64,
     pub g: f64,
     pub b: f64,
-    pub a: f64
+    /// 1.0 means completely transparent, 0.0 means opaque.
+    a: f64
 }
 
 impl Color {
-    /// Creates a new color given the red, green, blue and alpha values.
-    pub fn new(r: f64, g: f64, b: f64, a: f64) -> Color {
+    /// Creates a new (opaque) color given the red, green, blue values.
+    pub fn new(r: f64, g: f64, b: f64) -> Color {
+        Color::newa(r, g, b, 0.0)
+    }
+
+    fn newa(r: f64, g: f64, b: f64, a: f64) -> Color {
+        assert!(r <= 1.0 && g <= 1.0 && b <= 1.0 && a <= 1.0);
         Color { r: r, g: g, b: b, a: a }
+    }
+
+    /// Creates a color that is completely transparent.
+    pub fn transparent() -> Color {
+        Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
     }
 }
 
-// TODO: Implement scalar multiplication, addition, subtraction for Color.
+impl ops::Add for Color {
+    type Output = Color;
+
+    fn add(self, c: Color) -> Color {
+        Color::newa(self.r + c.r, self.g + c.g, self.b + c.b, self.a + c.a)
+    }
+}
+
+impl ops::Mul for Color {
+    type Output = Color;
+
+    fn mul(self, c: Color) -> Color {
+        Color::newa(self.r * c.r, self.g * c.g, self.b * c.b, self.a * c.a)
+    }
+}
+
+impl ops::Mul<Color> for f64 {
+    type Output = Color;
+
+    fn mul(self, c: Color) -> Color {
+        Color::newa(self * c.r, self * c.g, self * c.b, self * c.a)
+    }
+}
 
 // Stores an image and its dimensions.
 pub struct Image {
@@ -35,7 +69,7 @@ pub struct Image {
 impl Image {
     /// Creates a new (transparent) image of the given dimensions.
     pub fn new(width: usize, height: usize) -> Image {
-        Image { width: width, height: height, pixels: vec![Color::new(0.0,0.0,0.0,0.0); width * height] }
+        Image { width: width, height: height, pixels: vec![Color::transparent(); width * height] }
     }
 
     /// Returns the color of the pixel at (x,y).
@@ -56,7 +90,7 @@ impl Image {
     /// use std::path::*;
     /// let mut img = Image::new(255,255);
     /// for (x,y,col) in img.iter_mut() {
-    ///     *col = Color::new(x as f64/255.0,y as f64/255.0,0.0,1.0);
+    ///     *col = Color::new(x as f64/255.0,y as f64/255.0,0.0);
     /// }
     /// // Now, img transitions is black at the top-left, green at the bottom-left,
     /// // red at the top-right and yellow at the bottom-right.
@@ -98,7 +132,7 @@ pub fn write_pixels_to_file(image: Image, filepath: &Path) {
     let mut output: RgbaImage = ImageBuffer::new(image.width as u32, image.height as u32);
     for (x, y, pixel) in output.enumerate_pixels_mut() {
         let c = image.get(x as usize, y as usize);
-        *pixel = Rgba([to_u8(c.r), to_u8(c.g), to_u8(c.b), to_u8(c.a)]);
+        *pixel = Rgba([to_u8(c.r), to_u8(c.g), to_u8(c.b), to_u8(1.0 - c.a)]);
     }
     output.save(filepath).unwrap()
 }
