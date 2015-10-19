@@ -59,6 +59,9 @@ pub struct Intersection {
 pub trait Surface {
     /// Returns information about the intersection of the object and the ray, if one exists.
     fn intersect(&self, ray: Ray) -> Option<Intersection>;
+    /// Checks whether the ray intersects the object, computes no additional information.
+    /// If the offset is greater than `t_max`, it returns false.
+    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool;
 }
 
 /// Representation of a sphere.
@@ -84,6 +87,21 @@ impl Surface for Sphere {
         let normal = (x + t * ray.dir).normalize();
         Some(Intersection { t: t, normal: normal, material: self.material })
     }
+
+    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+        let x = ray.origin - self.center;
+        let b = 2.0 * x * ray.dir;
+        let c = x.norm2() - self.radius*self.radius;
+        let discriminant = b*b - 4.0*c;
+        if discriminant < 0.0 {
+            return false;
+        }
+        let t = (-b - f64::sqrt(discriminant)) / 2.0;
+        if t < EPS {
+            return false;
+        }
+        t < t_max
+    }
 }
 
 /// Representation of a plane.
@@ -107,6 +125,18 @@ impl Surface for Plane {
             return None
         }
         Some(Intersection { t: t, normal: self.normal, material: self.material })
+    }
+
+    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+        let nd = self.normal * ray.dir;
+        if f64::abs(nd) < EPS {
+            return false
+        }
+        let t = (self.offset - self.normal * ray.origin) / nd;
+        if t < EPS {
+            return false
+        }
+        t < t_max
     }
 }
 
@@ -148,6 +178,34 @@ impl Surface for Triangle {
             return None
         }
         Some(Intersection { t: t, normal: e.cross(f).normalize(), material: self.material })
+    }
+
+    /// Checks whether the ray hits the triangle.
+    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+        let d = ray.dir;
+        let e = self.b - self.a;
+        let f = self.c - self.a;
+        let g = ray.origin - self.a;
+        let p = d.cross(f);
+        let det = p * e;
+        // If the determinant is close to 0, the ray misses the triangle.
+        if det.abs() < EPS {
+            return false
+        }
+        let u = p * g / det;
+        if u < 0.0 || u > 1.0 {
+            return false
+        }
+        let q = g.cross(e);
+        let v = q * d / det;
+        if v < 0.0 || u + v > 1.0 {
+            return false
+        }
+        let t = q * f / det;
+        if t < EPS {
+            return false
+        }
+        t < t_max
     }
 }
 
@@ -225,16 +283,30 @@ impl Scene {
         }
     }
 
+    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+        for obj in self.objects.iter() {
+            if obj.is_hit_by(ray, t_max) { return true }
+        }
+        false
+    }
+
     /// Determines the color of an intersection point.
     fn shade(&self, ray: Ray, inter: &Intersection) -> Color {
         let mat = inter.material;
         // Start with the ambient color of the object.
         let mut color = mat.ambient * (self.ambient_color * mat.color);
-        let point = ray.origin + inter.t * ray.dir;
+        let point = ray.origin + (inter.t - EPS) * ray.dir;
         // Add the illuminance of every light up to get the final color:
         for light in self.lights.iter() {
+            // Construct shadow ray:
+            let light_vec = light.pos - point;
+            let t_max = light_vec.norm();
+            let light_dir = light_vec.normalize();
+            let shadow = Ray::new(point, light_dir, ray.intensity, ray.depth);
+            if self.is_hit_by(shadow, t_max) {
+                continue // the point is in the shadow of this light source
+            }
             // Compute the diffuse reflection:
-            let light_dir = (light.pos - point).normalize();
             let lambert_coefficient = mat.diffuse * f64::max(0.0, light_dir * inter.normal);
             let lambert = lambert_coefficient * (light.col * mat.color);
             // Compute the specular reflection (Blinn-Phong):

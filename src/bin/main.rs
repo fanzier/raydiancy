@@ -14,7 +14,7 @@ fn main() {
         diffuse: 0.32
     };
     let camera = Camera {
-        pos: Vec3::new(20.0, 0.0, 0.0),
+        pos: Vec3::new(20.0, 10.0, 20.0),
         look_at: Vec3::zero(),
         up: Vec3::e2(),
         horizontal_fov: 120_f64.to_radians(),
@@ -28,13 +28,13 @@ fn main() {
         material: Material { color: Color::new(1.0, 1.0, 1.0), .. material }
     };
     let sphere = Sphere {
-        center: Vec3::new(0.0,0.0,0.0),
+        center: Vec3::new(5.0, 1.0, 0.0),
         radius: 5.0,
         material: Material { color: Color::new(0.0, 0.0, 1.0), .. material }
     };
     let plane = Plane {
         normal: Vec3::e2(),
-        offset: -1.0,
+        offset: 0.0,
         material: Material { color: Color::new(0.5, 0.5, 0.5), .. material }
     };
     let triangle = Triangle {
