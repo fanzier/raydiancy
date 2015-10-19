@@ -122,7 +122,7 @@ pub struct Triangle {
 }
 
 impl Surface for Triangle {
-    /// Intersects a ray with a triangle. Triangles are *one-sided*. The backface is not rendered.
+    /// Intersects a ray with a triangle.
     fn intersect(&self, ray: Ray) -> Option<Intersection> {
         let d = ray.dir;
         let e = self.b - self.a;
@@ -130,19 +130,17 @@ impl Surface for Triangle {
         let g = ray.origin - self.a;
         let p = d.cross(f);
         let det = p * e;
-        // If the determinant is negative, we hit the backside of the triangle.
         // If the determinant is close to 0, the ray misses the triangle.
-        // In both cases, we don't want an intersection.
-        if det < EPS {
+        if det.abs() < EPS {
             return None
         }
-        let u = p * g;
-        if u < 0.0 || u > det {
+        let u = p * g / det;
+        if u < 0.0 || u > 1.0 {
             return None
         }
         let q = g.cross(e);
-        let v = q * d;
-        if v < 0.0 || u + v > det {
+        let v = q * d / det;
+        if v < 0.0 || u + v > 1.0 {
             return None
         }
         let t = q * f / det;
