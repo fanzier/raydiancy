@@ -5,6 +5,9 @@ use std::path::Path;
 use std::slice;
 use self::image::*;
 
+/// The gamma value used for gamma correction.
+const GAMMA_VALUE: f64 = 2.2;
+
 /// Represents an RGB color with transparency, each coordinate ranges between 0.0 and 1.0.
 #[derive(Debug, Copy, Clone)]
 pub struct Color {
@@ -139,5 +142,10 @@ pub fn write_pixels_to_file(image: Image, filepath: &Path) {
 
 /// Converts a floating point value between 0 and 1 to an integer between 0 and 255.
 fn to_u8(x: f64) -> u8 {
-    (x * 255.0) as u8
+    (gamma_correct(x) * 255.0) as u8
+}
+
+/// Applies standard gamma correction (2.2) to the color.
+fn gamma_correct(x: f64) -> f64 {
+    x.powf(1./GAMMA_VALUE)
 }
