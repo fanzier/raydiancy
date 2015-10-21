@@ -9,9 +9,10 @@ fn main() {
     let material = Material {
         color: Color::new(0.0,0.0,0.0),
         ambient: 0.18,
-        specular: 0.5,
+        specular: 0.2,
         shininess: 500.0,
-        diffuse: 0.32
+        diffuse: 0.32,
+        reflectance: 0.3,
     };
     let camera = Camera {
         pos: Vec3::new(20.0, 10.0, 20.0),
@@ -30,6 +31,11 @@ fn main() {
     let sphere = Sphere {
         center: Vec3::new(5.0, 1.0, 0.0),
         radius: 5.0,
+        material: Material { color: Color::new(0.0, 0.0, 1.0), .. material }
+    };
+    let sphere2 = Sphere {
+        center: Vec3::new(15.0, 1.0, 0.0),
+        radius: 4.0,
         material: Material { color: Color::new(0.0, 0.0, 1.0), .. material }
     };
     let plane = Plane {
@@ -52,6 +58,7 @@ fn main() {
         objects: vec![
             Box::new(background),
             Box::new(sphere),
+            Box::new(sphere2),
             Box::new(plane),
             Box::new(triangle)
             ],

@@ -2,6 +2,9 @@ pub use lin_alg::*;
 pub use img_output::*;
 use std::f64;
 
+const INTENSITY_THRESHOLD: f64= 1./256.;
+const MAX_DEPTH: usize = 4;
+
 /// Structure for representing rays
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Ray {
@@ -9,10 +12,6 @@ pub struct Ray {
     origin: Vec3,
     /// The direction the ray is traveling. Must be normalized!
     dir: Vec3,
-    /// How much the color of this ray will affect the pixel in the end. Range: 0 to 1
-    intensity: f64,
-    /// How often the ray was reflected/refracted before
-    depth: usize
 }
 
 impl Ray {
@@ -22,10 +21,10 @@ impl Ray {
     /// # Example
     /// ```
     /// use raydiancy::raytrace::*;
-    /// assert_eq!(Ray::new(Vec3::zero(), 42.0*Vec3::e1(), 0.0, 0), Ray::new(Vec3::zero(), Vec3::e1(), 0.0, 0));
+    /// assert_eq!(Ray::new(Vec3::zero(), 42.0*Vec3::e1()), Ray::new(Vec3::zero(), Vec3::e1()));
     /// ```
-    pub fn new(origin: Vec3, dir: Vec3, intensity: f64, depth: usize) -> Ray {
-        Ray { origin: origin, dir: dir.normalize(), intensity: intensity, depth: depth }
+    pub fn new(origin: Vec3, dir: Vec3) -> Ray {
+        Ray { origin: origin, dir: dir.normalize() }
     }
 }
 
@@ -42,7 +41,9 @@ pub struct Material {
     /// Shininess/specular exponent.
     /// When it is large, the specular highlight is small.
     /// It is larger for smoother and mirror-like surfaces.
-    pub shininess: f64
+    pub shininess: f64,
+    /// Mirror reflectance. 0 means no reflection, 1 means perfect mirror.
+    pub reflectance: f64,
 }
 
 /// Contains information about the intersection of a ray and an object.
@@ -258,14 +259,14 @@ impl Scene {
         for (left,down,col) in img.iter_mut() {
             let (x,y) = ((left as f64 / w) - 0.5, 0.5 - (down as f64 / h));
             let ray_dir = camera_dir + x * right + y * up;
-            let ray = Ray::new(self.camera.pos, ray_dir, 1.0, 0);
-            *col = self.trace_ray(ray);
+            let ray = Ray::new(self.camera.pos, ray_dir);
+            *col = self.trace_ray(ray, 1.0, 0);
         }
         return img;
     }
 
     /// Traces the ray through the scene and returns its color.
-    fn trace_ray(&self, ray: Ray) -> Color {
+    fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize) -> Color {
         let mut nearest: Option<Intersection> = None;
         let mut nearest_t: f64 = f64::INFINITY;
         for obj in self.objects.iter() {
@@ -277,8 +278,8 @@ impl Scene {
                 None => ()
             }
         }
-        match nearest {
-            Some(ref intersection) => ray.intensity * self.shade(ray, intersection),
+        intensity * match nearest {
+            Some(ref intersection) => self.shade(ray, intersection, intensity, depth + 1),
             None => Color::transparent()
         }
     }
@@ -291,7 +292,7 @@ impl Scene {
     }
 
     /// Determines the color of an intersection point.
-    fn shade(&self, ray: Ray, inter: &Intersection) -> Color {
+    fn shade(&self, ray: Ray, inter: &Intersection, intensity: f64, depth: usize) -> Color {
         let mat = inter.material;
         // Start with the ambient color of the object.
         let mut color = mat.ambient * (self.ambient_color * mat.color);
@@ -302,7 +303,7 @@ impl Scene {
             let light_vec = light.pos - point;
             let t_max = light_vec.norm();
             let light_dir = light_vec.normalize();
-            let shadow = Ray::new(point, light_dir, ray.intensity, ray.depth);
+            let shadow = Ray::new(point, light_dir);
             if self.is_hit_by(shadow, t_max) {
                 continue // the point is in the shadow of this light source
             }
@@ -316,6 +317,12 @@ impl Scene {
             let specular = specular_coefficient * light.col;
             // Add these two terms to overall color:
             color = color + lambert + specular;
+        }
+        // Compute the reflection:
+        if mat.reflectance > 0. && mat.reflectance * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {
+            let reflected_dir = ray.dir - 2. * (ray.dir * inter.normal) * inter.normal;
+            let new_intensity = mat.reflectance * intensity;
+            color = color + self.trace_ray(Ray::new(point, reflected_dir), new_intensity, depth + 1);
         }
         return color;
     }
