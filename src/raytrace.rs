@@ -266,7 +266,7 @@ impl Scene {
     }
 
     /// Traces the ray through the scene and returns its color.
-    fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize) -> Color {
+    fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize) -> AColor {
         let mut nearest: Option<Intersection> = None;
         let mut nearest_t: f64 = f64::INFINITY;
         for obj in self.objects.iter() {
@@ -280,7 +280,7 @@ impl Scene {
         }
         intensity * match nearest {
             Some(ref intersection) => self.shade(ray, intersection, intensity, depth + 1),
-            None => Color::transparent()
+            None => AColor::transparent()
         }
     }
 
@@ -292,10 +292,10 @@ impl Scene {
     }
 
     /// Determines the color of an intersection point.
-    fn shade(&self, ray: Ray, inter: &Intersection, intensity: f64, depth: usize) -> Color {
+    fn shade(&self, ray: Ray, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mat = inter.material;
         // Start with the ambient color of the object.
-        let mut color = mat.ambient * (self.ambient_color * mat.color);
+        let mut color = (mat.ambient * (self.ambient_color * mat.color)).with_alpha();
         let point = ray.origin + (inter.t - EPS) * ray.dir;
         // Add the illuminance of every light up to get the final color:
         for light in self.lights.iter() {
@@ -316,7 +316,7 @@ impl Scene {
             let specular_coefficient = mat.specular * f64::max(0.0, halfway * inter.normal).powf(mat.shininess);
             let specular = specular_coefficient * light.col;
             // Add these two terms to overall color:
-            color = color + lambert + specular;
+            color = color + lambert.with_alpha() + specular.with_alpha();
         }
         // Compute the reflection:
         if mat.reflectance > 0. && mat.reflectance * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {

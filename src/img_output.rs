@@ -1,63 +1,9 @@
 extern crate image;
 
-use std::ops;
+pub use color::*;
 use std::path::Path;
 use std::slice;
 use self::image::*;
-
-/// The gamma value used for gamma correction.
-const GAMMA_VALUE: f64 = 2.2;
-
-/// Represents an RGB color with transparency, each coordinate ranges between 0.0 and 1.0.
-#[derive(Debug, Copy, Clone)]
-pub struct Color {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
-    /// 1.0 means completely transparent, 0.0 means opaque.
-    a: f64
-}
-
-impl Color {
-    /// Creates a new (opaque) color given the red, green, blue values.
-    pub fn new(r: f64, g: f64, b: f64) -> Color {
-        Color::newa(r, g, b, 0.0)
-    }
-
-    fn newa(r: f64, g: f64, b: f64, a: f64) -> Color {
-        assert!(r <= 1.0 && g <= 1.0 && b <= 1.0 && a <= 1.0);
-        Color { r: r, g: g, b: b, a: a }
-    }
-
-    /// Creates a color that is completely transparent.
-    pub fn transparent() -> Color {
-        Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
-    }
-}
-
-impl ops::Add for Color {
-    type Output = Color;
-
-    fn add(self, c: Color) -> Color {
-        Color::newa(self.r + c.r, self.g + c.g, self.b + c.b, self.a + c.a)
-    }
-}
-
-impl ops::Mul for Color {
-    type Output = Color;
-
-    fn mul(self, c: Color) -> Color {
-        Color::newa(self.r * c.r, self.g * c.g, self.b * c.b, self.a * c.a)
-    }
-}
-
-impl ops::Mul<Color> for f64 {
-    type Output = Color;
-
-    fn mul(self, c: Color) -> Color {
-        Color::newa(self * c.r, self * c.g, self * c.b, self * c.a)
-    }
-}
 
 // Stores an image and its dimensions.
 pub struct Image {
@@ -66,22 +12,22 @@ pub struct Image {
     /// The height of the image in pixels.
     pub height: usize,
     /// The colors of each pixel, stored line by line in a one-dimensional vector.
-    pixels: Vec<Color>
+    pixels: Vec<AColor>
 }
 
 impl Image {
     /// Creates a new (transparent) image of the given dimensions.
     pub fn new(width: usize, height: usize) -> Image {
-        Image { width: width, height: height, pixels: vec![Color::transparent(); width * height] }
+        Image { width: width, height: height, pixels: vec![AColor::transparent(); width * height] }
     }
 
     /// Returns the color of the pixel at (x,y).
-    pub fn get(&self, x: usize, y: usize) -> Color {
+    pub fn get(&self, x: usize, y: usize) -> AColor {
         self.pixels[y * self.width + x]
     }
 
     /// Changes the pixel at (x,y) to the given color and returns a reference to the new image.
-    pub fn set(&mut self, x: usize, y: usize, c: Color) -> &Image {
+    pub fn set(&mut self, x: usize, y: usize, c: AColor) -> &Image {
         self.pixels[y * self.width + x] = c;
         self
     }
@@ -93,7 +39,7 @@ impl Image {
     /// use std::path::*;
     /// let mut img = Image::new(255,255);
     /// for (x,y,col) in img.iter_mut() {
-    ///     *col = Color::new(x as f64/255.0,y as f64/255.0,0.0);
+    ///     *col = AColor::new(x as f64/255.0,y as f64/255.0,0.0);
     /// }
     /// // Now, img transitions is black at the top-left, green at the bottom-left,
     /// // red at the top-right and yellow at the bottom-right.
@@ -108,14 +54,14 @@ impl Image {
 ///
 /// The documentation for `Image::iter_mut` includes an example of usage.
 pub struct ImageIterator<'a> {
-    pixels: slice::IterMut<'a, Color>,
+    pixels: slice::IterMut<'a, AColor>,
     x: usize,
     y: usize,
     width: usize
 }
 
 impl<'a> Iterator for ImageIterator<'a> {
-    type Item = (usize, usize, &'a mut Color);
+    type Item = (usize, usize, &'a mut AColor);
 
     fn next(&mut self) -> Option<Self::Item> {
         let result = self.pixels.next().map(|iter| (self.x, self.y, iter));
@@ -135,17 +81,8 @@ pub fn write_pixels_to_file(image: Image, filepath: &Path) {
     let mut output: RgbaImage = ImageBuffer::new(image.width as u32, image.height as u32);
     for (x, y, pixel) in output.enumerate_pixels_mut() {
         let c = image.get(x as usize, y as usize);
-        *pixel = Rgba([to_u8(c.r), to_u8(c.g), to_u8(c.b), to_u8(1.0 - c.a)]);
+        let (r,g,b,a) = c.to_rgba();
+        *pixel = Rgba([r,g,b,a]);
     }
     output.save(filepath).unwrap()
-}
-
-/// Converts a floating point value between 0 and 1 to an integer between 0 and 255.
-fn to_u8(x: f64) -> u8 {
-    (gamma_correct(x) * 255.0) as u8
-}
-
-/// Applies standard gamma correction (2.2) to the color.
-fn gamma_correct(x: f64) -> f64 {
-    x.powf(1./GAMMA_VALUE)
 }
