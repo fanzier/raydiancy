@@ -13,9 +13,11 @@ fn main() {
         shininess: 500.0,
         diffuse: 0.32,
         reflectance: 0.3,
+        refractivity: 0.0,
+        refraction_index: 1.5,
     };
     let camera = Camera {
-        pos: Vec3::new(20.0, 10.0, 20.0),
+        pos: Vec3::new(30.0, 5.0, 5.0),
         look_at: Vec3::zero(),
         up: Vec3::e2(),
         horizontal_fov: 120_f64.to_radians(),
@@ -34,9 +36,9 @@ fn main() {
         material: Material { color: Color::new(0.0, 0.0, 1.0), .. material }
     };
     let sphere2 = Sphere {
-        center: Vec3::new(15.0, 1.0, 0.0),
+        center: Vec3::new(15.0, 1.0, 4.0),
         radius: 4.0,
-        material: Material { color: Color::new(0.0, 0.0, 1.0), .. material }
+        material: Material { color: Color::new(1.0, 1.0, 1.0), diffuse: 0., ambient: 0., refractivity: 0.8, .. material }
     };
     let plane = Plane {
         normal: Vec3::e2(),

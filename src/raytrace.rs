@@ -44,6 +44,10 @@ pub struct Material {
     pub shininess: f64,
     /// Mirror reflectance. 0 means no reflection, 1 means perfect mirror.
     pub reflectance: f64,
+    /// Refractivity. 0 means no refraction, 1 means only recfraction.
+    pub refractivity: f64,
+    /// Refraction index. 1 is vacuum.
+    pub refraction_index: f64,
 }
 
 /// Contains information about the intersection of a ray and an object.
@@ -324,6 +328,59 @@ impl Scene {
             let new_intensity = mat.reflectance * intensity;
             color = color + self.trace_ray(Ray::new(point, reflected_dir), new_intensity, depth + 1);
         }
+        // Compute the refraction:
+        if mat.refractivity > 0. && mat.refractivity * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {
+            if ray.dir * inter.normal < 0. { // Ray enters object:
+                let refracted_dir = Scene::refract(ray.dir, inter.normal, 1. / mat.refraction_index).unwrap();
+                let reflected_dir = ray.dir - 2. * (ray.dir * inter.normal) * inter.normal;
+                let fresnel_factor = Scene::fresnel(ray.dir, inter.normal, mat.refraction_index);
+                let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
+                let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
+                let refracted = self.trace_ray(Ray::new(point, refracted_dir), refracted_intensity, depth + 1);
+                let reflected = self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
+                color = color + refracted_intensity * refracted + reflected_intensity * reflected;
+            } else {
+                let refracted_dir = Scene::refract(ray.dir, -inter.normal, mat.refraction_index);
+                // TODO: Implement beer's law for light absorption inside material.
+                match refracted_dir {
+                    None => { // Total internal reflection:
+                        let reflected_dir = ray.dir - 2. * (ray.dir * inter.normal) * inter.normal;
+                        let reflected_intensity = intensity * mat.refractivity;
+                        let reflected = self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
+                        color = color + reflected_intensity * reflected},
+                    Some(refracted_dir) => {// No total internal reflection:
+                        let reflected_dir = ray.dir - 2. * (ray.dir * inter.normal) * inter.normal;
+                        let fresnel_factor = Scene::fresnel(ray.dir, inter.normal, 1. / mat.refraction_index);
+                        let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
+                        let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
+                        let refracted = self.trace_ray(Ray::new(point, refracted_dir), refracted_intensity, depth + 1);
+                        let reflected = self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
+                        color = color + refracted_intensity * refracted + reflected_intensity * reflected}
+                }
+            }
+        }
         return color;
+    }
+
+    fn fresnel(i: Vec3, n: Vec3, r: f64) -> f64 {
+        let c = -i * n;
+        let g = (r * r + c * c - 1.).sqrt();
+        let gpc = g + c;
+        let gmc = g - c;
+        let cgpcm1 = c * gpc - 1.;
+        let cgmcp1 = c * gmc + 1.;
+        let frac1 = gmc / gpc;
+        let frac2 = cgpcm1 / cgmcp1;
+        frac1 * frac1 / 2. * (frac2 * frac2 + 1.)
+    }
+
+    fn refract(i: Vec3, n: Vec3, r: f64) -> Option<Vec3> {
+        let w = -r * i * n;
+        let k = 1. + (w + r) * (w - r);
+        if k < 0. {
+            None
+        } else {
+            Some(r * i + (w - k.sqrt()) * n)
+        }
     }
 }
