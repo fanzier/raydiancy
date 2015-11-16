@@ -18,7 +18,10 @@ pub struct Image {
 impl Image {
     /// Creates a new (transparent) image of the given dimensions.
     pub fn new(width: usize, height: usize) -> Image {
-        Image { width: width, height: height, pixels: vec![AColor::transparent(); width * height] }
+        Image { width: width,
+                height: height,
+                pixels: vec![AColor::transparent(); width * height]
+              }
     }
 
     /// Returns the color of the pixel at (x,y).

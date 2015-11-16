@@ -18,7 +18,8 @@ impl Ray {
     /// # Example
     /// ```
     /// use raydiancy::raytrace::*;
-    /// assert_eq!(Ray::new(Vec3::zero(), 42.0*Vec3::e1()), Ray::new(Vec3::zero(), Vec3::e1()));
+    /// assert_eq!(Ray::new(Vec3::zero(), 42.0*Vec3::e1()),
+    ///            Ray::new(Vec3::zero(), Vec3::e1()));
     /// ```
     pub fn new(origin: Vec3, dir: Vec3) -> Ray {
         Ray { origin: origin, dir: dir.normalize() }

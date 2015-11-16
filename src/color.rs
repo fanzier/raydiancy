@@ -3,6 +3,10 @@ use std::ops;
 /// The gamma value used for gamma correction.
 const GAMMA_VALUE: f64 = 2.2;
 
+fn is_in_unit_interval(x: f64) -> bool {
+    0. <= x && x <= 1.
+}
+
 /// Represents an RGB color, each channel ranges between 0.0 and 1.0.
 #[derive(Debug, Copy, Clone)]
 pub struct Color {
@@ -12,8 +16,9 @@ pub struct Color {
 }
 
 impl Color {
-    /// Creates a new (opaque) AColor given the red, green, blue values.
+    /// Creates a new (opaque) Color given the red, green, blue values.
     pub fn new(r: f64, g: f64, b: f64) -> Color {
+        assert!(is_in_unit_interval(r) && is_in_unit_interval(g) && is_in_unit_interval(b));
         Color { r: r, g: g, b: b }
     }
 
@@ -60,7 +65,7 @@ impl ops::Mul<Color> for Color {
 }
 
 /// Represents an RGB color with transparency.
-/// For a background color b, the final color is c + a * b.
+/// For a background color b, the final color is `c + a * b`.
 #[derive(Debug, Copy, Clone)]
 pub struct AColor {
     pub c: Color,
@@ -85,9 +90,15 @@ impl AColor {
 
     /// Converts the color to RGBA.
     pub fn to_rgba(&self) -> (u8,u8,u8,u8) {
-        if self.a == 1. { return (0,0,0,0) }
+        if self.a == 1. {
+            return (0,0,0,0)
+        }
         let c = (1. - self.a) * self.c;
-        (to_u8(gamma_correct(c.r)), to_u8(gamma_correct(c.g)), to_u8(gamma_correct(c.b)),255 - to_u8(self.a))
+        (to_u8(gamma_correct(c.r)),
+         to_u8(gamma_correct(c.g)),
+         to_u8(gamma_correct(c.b)),
+         0xff - to_u8(self.a),
+        )
     }
 }
 
@@ -115,6 +126,7 @@ impl ops::Mul<AColor> for f64 {
 
 /// Converts a floating point value between 0 and 1 to an integer between 0 and 255.
 fn to_u8(x: f64) -> u8 {
+    assert!(!x.is_nan());
     (x * 255.0) as u8
 }
 

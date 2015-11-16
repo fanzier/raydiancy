@@ -249,10 +249,23 @@ impl Matrix34 {
     pub fn rotate(axis: Vec3, angle: f64) -> Matrix34 {
         let u = axis.normalize();
         Matrix34{
-            m :
-                [ [ angle.cos()+u[0]*u[0]*(1.0 - angle.cos()), u[0]*u[1]*(1.0-angle.cos()) - u[2]*angle.sin(), u[0]*u[2]*(1.0-angle.cos()) + u[1]*angle.sin(), 0.0 ]
-                , [ u[1]*u[0]*(1.0-angle.cos()) + u[2]*angle.sin(), angle.cos()+u[1]*u[1]*(1.0 - angle.cos()), u[1]*u[2]*(1.0-angle.cos()) - u[0]*angle.sin(), 0.0 ]
-                , [ u[2]*u[0]*(1.0-angle.cos()) - u[1]*angle.sin(), u[2]*u[1]*(1.0-angle.cos()) + u[0]*angle.sin(), angle.cos()+u[2]*u[2]*(1.0 - angle.cos()), 0.0 ]]
+            m: [
+                  [ angle.cos()+u[0]*u[0]*(1.0 - angle.cos()),
+                    u[0]*u[1]*(1.0-angle.cos()) - u[2]*angle.sin(),
+                    u[0]*u[2]*(1.0-angle.cos()) + u[1]*angle.sin(),
+                    0.0
+                  ],
+                  [ u[1]*u[0]*(1.0-angle.cos()) + u[2]*angle.sin(),
+                    angle.cos()+u[1]*u[1]*(1.0 - angle.cos()),
+                    u[1]*u[2]*(1.0-angle.cos()) - u[0]*angle.sin(),
+                    0.0
+                  ],
+                  [ u[2]*u[0]*(1.0-angle.cos()) - u[1]*angle.sin(),
+                    u[2]*u[1]*(1.0-angle.cos()) + u[0]*angle.sin(),
+                    angle.cos()+u[2]*u[2]*(1.0 - angle.cos()),
+                    0.0
+                  ]
+                ]
         }
     }
 

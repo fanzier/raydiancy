@@ -67,12 +67,11 @@ impl Scene {
         let mut nearest: Option<Intersection> = None;
         let mut nearest_t: f64 = f64::INFINITY;
         for obj in self.objects.iter() {
-            match obj.intersect(ray) {
-                Some(intersection) => if intersection.t < nearest_t {
+            if let Some(intersection) = obj.intersect(ray) {
+                if intersection.t < nearest_t {
                     nearest_t = intersection.t;
                     nearest = Some(intersection);
-                },
-                None => ()
+                }
             }
         }
         intensity * match nearest {
@@ -95,6 +94,9 @@ impl Scene {
         + self.compute_reflection_refraction(point, ray.dir, inter, intensity, depth)
     }
 
+    /// Computes the illuminance at the given intersection point.
+    /// This means that ambient, diffuse, and specular reflection are taken into account,
+    /// but not mirror-like reflection or refraction for transparent objects.
     fn compute_illuminance(&self, point: Vec3, dir: Vec3, inter: &Intersection) -> AColor {
         let mat = inter.material;
         // Start with the ambient color of the object.
@@ -105,9 +107,9 @@ impl Scene {
             let light_vec = light.pos - point;
             let t_max = light_vec.norm();
             let light_dir = light_vec.normalize();
-            let shadow = Ray::new(point, light_dir);
+            let shadow_ray = Ray::new(point, light_dir);
             // Check if the point is in the shadow of the current light source.
-            if self.is_hit_by(shadow, t_max) {
+            if self.is_hit_by(shadow_ray, t_max) {
                 continue // the point is in the shadow of this light source
             }
             // Compute the diffuse reflection:
@@ -122,6 +124,7 @@ impl Scene {
         return color;
     }
 
+    /// Computes the refraction for transparent objects and reflection for reflective ones.
     fn compute_reflection_refraction(&self, point: Vec3, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mut color = AColor::new(0., 0., 0.);
         let mat = inter.material;
@@ -141,6 +144,7 @@ impl Scene {
         return color;
     }
 
+    /// Traces the reflected and refracted (except in case of total reflection).
     fn compute_recursive_refraction(&self, point: Vec3, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mat = inter.material;
         let reflected_dir = reflect(dir, inter.normal);
