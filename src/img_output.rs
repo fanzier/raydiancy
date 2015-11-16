@@ -1,6 +1,6 @@
 extern crate image;
 
-pub use color::*;
+use color::*;
 use std::path::Path;
 use std::slice;
 use self::image::*;
@@ -35,6 +35,7 @@ impl Image {
     /// Returns a mutable iterator over the pixels of the image.
     ///
     /// ```
+    /// use raydiancy::color::*;
     /// use raydiancy::img_output::*;
     /// use std::path::*;
     /// let mut img = Image::new(255,255);
