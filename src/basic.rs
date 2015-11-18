@@ -1,5 +1,6 @@
 pub use lin_alg::*;
 pub use color::*;
+pub use material::*;
 
 
 /// Structure for representing rays
@@ -24,28 +25,6 @@ impl Ray {
     pub fn new(origin: Vec3, dir: Vec3) -> Ray {
         Ray { origin: origin, dir: dir.normalize() }
     }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Material {
-    /// Color of the material.
-    pub color: Color,
-    /// Ambient reflection constant.
-    pub ambient: f64,
-    /// Diffuse reflection constant.
-    pub diffuse: f64,
-    /// Specular reflection constant.
-    pub specular: f64,
-    /// Shininess/specular exponent.
-    /// When it is large, the specular highlight is small.
-    /// It is larger for smoother and mirror-like surfaces.
-    pub shininess: f64,
-    /// Mirror reflectance. 0 means no reflection, 1 means perfect mirror.
-    pub reflectance: f64,
-    /// Refractivity. 0 means no refraction, 1 means only recfraction.
-    pub refractivity: f64,
-    /// Refraction index. 1 is vacuum.
-    pub refraction_index: f64,
 }
 
 /// Contains information about the intersection of a ray and an object.

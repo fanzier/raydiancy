@@ -10,9 +10,9 @@ fn is_in_unit_interval(x: f64) -> bool {
 /// Represents an RGB color, each channel ranges between 0.0 and 1.0.
 #[derive(Debug, Copy, Clone)]
 pub struct Color {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
+    r: f64,
+    g: f64,
+    b: f64,
 }
 
 impl Color {
@@ -20,6 +20,26 @@ impl Color {
     pub fn new(r: f64, g: f64, b: f64) -> Color {
         assert!(is_in_unit_interval(r) && is_in_unit_interval(g) && is_in_unit_interval(b));
         Color { r: r, g: g, b: b }
+    }
+
+    /// Creates a gray color with the given brightness. 0 -> black, 1 -> white.
+    pub fn new_gray(b: f64) -> Color {
+        Color::new(b, b, b)
+    }
+
+    /// Returns the red channel of the color.
+    pub fn red(&self) -> f64 {
+        self.r
+    }
+
+    /// Returns the green channel of the color.
+    pub fn green(&self) -> f64 {
+        self.g
+    }
+
+    /// Returns the blue channel of the color.
+    pub fn blue(&self) -> f64 {
+        self.b
     }
 
     /// Convert to an opaque color with alpha channel.
@@ -64,12 +84,20 @@ impl ops::Mul<Color> for Color {
     }
 }
 
+pub fn black() -> Color {
+    Color::new(0., 0., 0.)
+}
+
+pub fn white() -> Color {
+    Color::new(1., 1., 1.)
+}
+
 /// Represents an RGB color with transparency.
 /// For a background color b, the final color is `c + a * b`.
 #[derive(Debug, Copy, Clone)]
 pub struct AColor {
-    pub c: Color,
-    pub a: f64,
+    c: Color,
+    a: f64,
 }
 
 impl AColor {
@@ -81,6 +109,16 @@ impl AColor {
     fn newa(r: f64, g: f64, b: f64, a: f64) -> AColor {
         assert!(r + a <= 1.0 && g + a <= 1.0 && b + a <= 1.0);
         AColor { c: Color::new(r, g, b), a: a }
+    }
+
+    /// Returns the opaque part of the color.
+    pub fn opaque(&self) -> Color {
+        self.c
+    }
+
+    /// Returns the transparency of the color. 0 means opaque, 1 means transparent.
+    pub fn transparency(&self) -> f64 {
+        self.a
     }
 
     /// Creates a AColor that is completely transparent.
