@@ -21,7 +21,7 @@ impl Surface for Sphere {
             return None;
         }
         let normal = (x + t * ray.dir).normalize();
-        Some(Intersection { t: t, normal: normal, material: self.material })
+        Some(Intersection::new(ray, t, normal, self.material))
     }
 
     fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {

@@ -89,25 +89,24 @@ impl Scene {
 
     /// Determines the color of an intersection point.
     fn shade(&self, ray: Ray, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
-        let point = ray.origin + (inter.t - EPS) * ray.dir;
-        self.compute_illuminance(point, ray.dir, inter)
-        + self.compute_reflection_refraction(point, ray.dir, inter, intensity, depth)
+        self.compute_illuminance(ray.dir, inter)
+        + self.compute_reflection_refraction(ray.dir, inter, intensity, depth)
     }
 
     /// Computes the illuminance at the given intersection point.
     /// This means that ambient, diffuse, and specular reflection are taken into account,
     /// but not mirror-like reflection or refraction for transparent objects.
-    fn compute_illuminance(&self, point: Vec3, dir: Vec3, inter: &Intersection) -> AColor {
+    fn compute_illuminance(&self, dir: Vec3, inter: &Intersection) -> AColor {
         let mat = inter.material;
         // Start with the ambient color of the object.
         let mut color = (mat.ambient * (self.ambient_color * mat.color)).with_alpha();
         // Add the illuminance of every light up to get the final color:
         for light in self.lights.iter() {
             // Construct shadow ray:
-            let light_vec = light.pos - point;
+            let light_vec = light.pos - inter.point;
             let t_max = light_vec.norm();
             let light_dir = light_vec.normalize();
-            let shadow_ray = Ray::new(point, light_dir);
+            let shadow_ray = shadow_ray(inter, light_dir);
             // Check if the point is in the shadow of the current light source.
             if self.is_hit_by(shadow_ray, t_max) {
                 continue // the point is in the shadow of this light source
@@ -125,54 +124,53 @@ impl Scene {
     }
 
     /// Computes the refraction for transparent objects and reflection for reflective ones.
-    fn compute_reflection_refraction(&self, point: Vec3, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
+    fn compute_reflection_refraction(&self, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mut color = AColor::new(0., 0., 0.);
         let mat = inter.material;
 
         // Compute the REFLECTION:
         if mat.reflectance > 0. && mat.reflectance * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {
-            let reflected_dir = reflect(dir, inter.normal);
+            let reflected_ray = reflect_ray(inter, dir);
             let reflected_intensity = mat.reflectance * intensity;
-            color = color + self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
+            color = color + self.trace_ray(reflected_ray, reflected_intensity, depth + 1);
         }
 
         // Compute the REFRACTION:
         if mat.refractivity > 0. && mat.refractivity * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {
-            color = color + self.compute_recursive_refraction(point, dir, inter, intensity, depth);
+            color = color + self.compute_recursive_refraction(dir, inter, intensity, depth);
         }
 
         return color;
     }
 
     /// Traces the reflected and refracted (except in case of total reflection).
-    fn compute_recursive_refraction(&self, point: Vec3, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
+    fn compute_recursive_refraction(&self, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mat = inter.material;
-        let reflected_dir = reflect(dir, inter.normal);
-        if dir * inter.normal < 0. { // Ray enters object:
-            let refracted_dir = refract(dir, inter.normal, mat.refraction_index).unwrap();
-            let fresnel_factor = fresnel(dir, inter.normal, mat.refraction_index);
-            let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
-            let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
-            let refracted = self.trace_ray(Ray::new(point, refracted_dir), refracted_intensity, depth + 1);
-            let reflected = self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
-            return refracted_intensity * refracted + reflected_intensity * reflected
+        // TODO: We assume that the ray travels to or from vacuum (which is almost always the case).
+        // But, for example, if the ray travels from glass (1.5) to water (1.33),
+        // the ior used here (1.33) is incorrect, should be 1.33/1.5.
+        let (ior, normal) = if dir * inter.normal < 0. { // Ray enters object:
+            (mat.refraction_index, inter.normal)
         } else { // Ray exits object:
-            let refracted_dir = refract(dir, -inter.normal, 1. / mat.refraction_index);
-            // TODO: Implement beer's law for light absorption inside material.
-            match refracted_dir {
-                None => { // Total internal reflection:
-                    let reflected_intensity = intensity * mat.refractivity;
-                    let reflected = self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
-                    return reflected_intensity * reflected
-                },
-                Some(refracted_dir) => { // Both reflection and refraction:
-                    let fresnel_factor = fresnel(dir, inter.normal, 1. / mat.refraction_index);
-                    let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
-                    let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
-                    let refracted = self.trace_ray(Ray::new(point, refracted_dir), refracted_intensity, depth + 1);
-                    let reflected = self.trace_ray(Ray::new(point, reflected_dir), reflected_intensity, depth + 1);
-                    return refracted_intensity * refracted + reflected_intensity * reflected
-                }
+            (1. / mat.refraction_index, -inter.normal)
+        };
+        let ref inter = Intersection { normal: normal, .. *inter };
+        let reflected_ray = reflect_ray(inter, dir);
+        let refracted_ray = refract_ray(inter, dir, ior);
+        // TODO: Implement beer's law for light absorption inside material.
+        match refracted_ray {
+            None => { // Total internal reflection:
+                let reflected_intensity = intensity * mat.refractivity;
+                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1);
+                return reflected_intensity * reflected
+            },
+            Some(refracted_ray) => { // Both reflection and refraction:
+                let fresnel_factor = fresnel(dir, normal, ior);
+                let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
+                let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
+                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1);
+                let refracted = self.trace_ray(refracted_ray, refracted_intensity, depth + 1);
+                return refracted_intensity * refracted + reflected_intensity * reflected
             }
         }
     }

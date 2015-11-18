@@ -37,7 +37,8 @@ impl Surface for Triangle {
         if t < EPS {
             return None
         }
-        Some(Intersection { t: t, normal: e.cross(f).normalize(), material: self.material })
+        let normal = e.cross(f).normalize();
+        Some(Intersection::new(ray, t, normal, self.material))
     }
 
     /// Checks whether the ray hits the triangle.

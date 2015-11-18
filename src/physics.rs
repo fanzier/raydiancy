@@ -11,16 +11,16 @@ pub fn reflect(i: Vec3, n: Vec3) -> Vec3 {
     i - 2. * (i * n) * n
 }
 
-/// Calculates the Fresnel reflection of i on an object surface with normal n and refraction index r.
-/// Precisely speaking, r = new_index / old_index.
+/// Computes the Fresnel reflection of i on an object surface with normal n and index of refraction (ior) r.
+/// Precisely speaking, r = ior of material being entered / ior of material being exited.
 pub fn fresnel(i: Vec3, n: Vec3, r: f64) -> f64 {
-    let c = -i * n;
-    let g = (r * r + c * c - 1.).sqrt();
+    let c = -i * n; // = cos(angle of incidence)
+    let g = (r * r + c * c - 1.).sqrt(); // = r * cos(angle of refraction)
     let gpc = g + c;
     let gmc = g - c;
-    let frac1 = gmc / gpc;
-    let frac2 = (c * gpc - 1.) / (c * gmc + 1.);
-    frac1 * frac1 / 2. * (frac2 * frac2 + 1.)
+    let f1 = gmc / gpc; // = sqrt(reflectance for orthogonal polarization)
+    let f2 = (c * gpc - 1.) / (c * gmc + 1.); // f1 * f2 = sqrt(reflectance for parallel polarization)
+    f1 * f1 * (f2 * f2 + 1.) / 2. // = average of reflectance for orthogonal and parallel polarization
 }
 
 /// Calculates the refraction of i on an object surface with normal n and refraction index quotient r.
