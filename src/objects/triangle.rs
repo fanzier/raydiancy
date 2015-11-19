@@ -14,58 +14,70 @@ pub struct Triangle {
 impl Surface for Triangle {
     /// Intersects a ray with a triangle.
     fn intersect(&self, ray: Ray) -> Option<Intersection> {
-        let d = ray.dir;
-        let e = self.b - self.a;
-        let f = self.c - self.a;
-        let g = ray.origin - self.a;
-        let p = d.cross(f);
-        let det = p * e;
-        // If the determinant is close to 0, the ray misses the triangle.
-        if det.abs() < EPS {
-            return None
-        }
-        let u = p * g / det;
-        if u < 0.0 || u > 1.0 {
-            return None
-        }
-        let q = g.cross(e);
-        let v = q * d / det;
-        if v < 0.0 || u + v > 1.0 {
-            return None
-        }
-        let t = q * f / det;
-        if t < EPS {
-            return None
-        }
-        let normal = e.cross(f).normalize();
-        Some(Intersection::new(ray, t, normal, self.material))
+        intersect_triangle(self.a, self.b, self.c, ray).map(|(e,f,_,_,t)| {
+            let normal = e.cross(f).normalize();
+            Intersection::new(ray, t, normal, self.material)
+        })
     }
 
     /// Checks whether the ray hits the triangle.
     fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
-        let d = ray.dir;
-        let e = self.b - self.a;
-        let f = self.c - self.a;
-        let g = ray.origin - self.a;
-        let p = d.cross(f);
-        let det = p * e;
-        // If the determinant is close to 0, the ray misses the triangle.
-        if det.abs() < EPS {
-            return false
-        }
-        let u = p * g / det;
-        if u < 0.0 || u > 1.0 {
-            return false
-        }
-        let q = g.cross(e);
-        let v = q * d / det;
-        if v < 0.0 || u + v > 1.0 {
-            return false
-        }
-        let t = q * f / det;
-        if t < EPS {
-            return false
-        }
-        t < t_max
+        is_triangle_hit_by(self.a, self.b, self.c, ray, t_max)
     }
+}
+
+#[inline(always)]
+pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray) -> Option<(Vec3,Vec3,f64,f64,f64)> {
+    let d = ray.dir;
+    let e = b - a;
+    let f = c - a;
+    let g = ray.origin - a;
+    let p = d.cross(f);
+    let det = p * e;
+    // If the determinant is close to 0, the ray misses the triangle.
+    if det.abs() < EPS {
+        return None
+    }
+    let u = p * g / det;
+    if u < 0.0 || u > 1.0 {
+        return None
+    }
+    let q = g.cross(e);
+    let v = q * d / det;
+    if v < 0.0 || u + v > 1.0 {
+        return None
+    }
+    let t = q * f / det;
+    if t < EPS {
+        return None
+    }
+    return Some((e,f,u,v,t))
+}
+
+#[inline(always)]
+pub fn is_triangle_hit_by(a: Vec3, b: Vec3, c: Vec3, ray: Ray, t_max: f64) -> bool {
+    let d = ray.dir;
+    let e = b - a;
+    let f = c - a;
+    let g = ray.origin - a;
+    let p = d.cross(f);
+    let det = p * e;
+    // If the determinant is close to 0, the ray misses the triangle.
+    if det.abs() < EPS {
+        return false
+    }
+    let u = p * g / det;
+    if u < 0.0 || u > 1.0 {
+        return false
+    }
+    let q = g.cross(e);
+    let v = q * d / det;
+    if v < 0.0 || u + v > 1.0 {
+        return false
+    }
+    let t = q * f / det;
+    if t < EPS {
+        return false
+    }
+    t < t_max
 }
