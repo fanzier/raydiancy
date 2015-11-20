@@ -49,8 +49,9 @@ impl Scene {
         let (w, h) = (self.camera.width as f64, self.camera.height as f64);
         let horizontal = (self.camera.horizontal_fov / 2.0).tan();
         let camera_dir = (self.camera.look_at - self.camera.pos).normalize();
-        let up = horizontal / self.camera.aspect_ratio * self.camera.up.normalize();
         let right = horizontal * camera_dir.cross(self.camera.up).normalize();
+        let up = right.cross(camera_dir).normalize();
+        let up = horizontal / self.camera.aspect_ratio * up;
 
         let mut img = Image::new(self.camera.width, self.camera.height);
         for (left,down,col) in img.iter_mut() {
