@@ -20,7 +20,10 @@ impl Surface for Plane {
         if t < EPS {
             return None
         }
-        Some(Intersection::new(ray, t, self.normal, self.material))
+        // Make the normal vector point to the origin of the ray.
+        // This is important for the epsilon displacement for shadow and reflection rays.
+        let normal = -nd.signum() * self.normal;
+        Some(Intersection::new(ray, t, normal, self.material))
     }
 
     fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {

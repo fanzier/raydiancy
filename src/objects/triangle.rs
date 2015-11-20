@@ -16,6 +16,9 @@ impl Surface for Triangle {
     fn intersect(&self, ray: Ray) -> Option<Intersection> {
         intersect_triangle(self.a, self.b, self.c, ray).map(|(e,f,_,_,t)| {
             let normal = e.cross(f).normalize();
+            // Make the normal vector point to the origin of the ray.
+            // This is important for the epsilon displacement for shadow and reflection rays.
+            let normal = -(normal * ray.dir).signum() * normal;
             Intersection::new(ray, t, normal, self.material)
         })
     }
