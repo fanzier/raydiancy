@@ -4,8 +4,9 @@ pub use physics::*;
 pub use objects::*;
 use std::f64;
 
+// TODO: Move these constants in a struct `RenderOptions`.
 const INTENSITY_THRESHOLD: f64= 1./256.;
-const MAX_DEPTH: usize = 4;
+const MAX_DEPTH: usize = 10;
 
 /// Contains information about camera, like position, direction etc.
 pub struct Camera {

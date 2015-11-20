@@ -2,71 +2,151 @@ extern crate raydiancy;
 
 use raydiancy::raytrace::*;
 use std::path::Path;
+use std::fs;
+
+macro_rules! render {
+    ($scene:ident) => { {
+        let _ = fs::create_dir("output/");
+        write_pixels_to_file(
+            $scene().render(),
+            Path::new(&format!("output/{}.png", stringify!($scene))));
+    } }
+}
 
 fn main() {
-    let width = 1600;
-    let height = 900;
-    let material = Material {
-        color: Color::new(0.0,0.0,0.0),
-        ambient: 0.18,
-        specular: 0.2,
-        shininess: 500.0,
-        diffuse: 0.32,
-        reflectance: 0.3,
-        refractivity: 0.0,
-        refraction_index: 1.5,
-    };
+    render!(bunny);
+    render!(dragon);
+    render!(spheres);
+}
+
+fn bunny() -> Scene {
+    let width = 64;
+    let height = 36;
+    let material = color_material(white());
     let camera = Camera {
-        pos: Vec3::new(30.0, 5.0, 5.0),
-        look_at: Vec3::zero(),
+        pos: Vec3::new(0.0, 4.0, 12.0),
+        look_at: 4.0 * Vec3::e2(),
         up: Vec3::e2(),
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,
         height: height
     };
-    let background = Plane {
-        normal: Vec3::e1(),
-        offset: -100.0,
-        material: Material { color: Color::new(1.0, 1.0, 1.0), .. material }
-    };
-    let sphere = Sphere {
-        center: Vec3::new(5.0, 1.0, 0.0),
-        radius: 5.0,
-        material: Material { color: Color::new(0.0, 0.0, 1.0), .. material }
-    };
-    let sphere2 = Sphere {
-        center: Vec3::new(15.0, 1.0, 4.0),
-        radius: 4.0,
-        material: Material { color: Color::new(1.0, 1.0, 1.0), diffuse: 0., ambient: 0., refractivity: 0.8, .. material }
-    };
-    let plane = Plane {
-        normal: Vec3::e2(),
-        offset: 0.0,
-        material: Material { color: Color::new(0.5, 0.5, 0.5), .. material }
-    };
-    let triangle = Triangle {
-        a: Vec3::zero(),
-        b: 8.0 * Vec3::e2(),
-        c: 8.0 * Vec3::e3(),
-        material: Material { color: Color::new(0.0, 1.0, 0.0), .. material }
-    };
+    let mesh = Mesh::from_obj_file("scenes/bunny.obj", material);
     let light = LightSource {
-        pos: Vec3::new(10.0, 10.0, 0.0),
-        col: Color::new(1.0, 1.0, 1.0)
+        pos: Vec3::new(0.0, 10.0, 10.0),
+        col: white()
     };
-    let scene = Scene {
+    return Scene {
         camera: camera,
         objects: vec![
-            Box::new(background),
-            Box::new(sphere),
-            Box::new(sphere2),
-            Box::new(plane),
-            Box::new(triangle)
+            Box::new(mesh.unwrap()),
             ],
-        ambient_color: Color::new(1.0, 1.0, 1.0),
+        ambient_color: white(),
         lights: vec![light]
     };
-    let img = scene.render();
-    write_pixels_to_file(img, Path::new("output.png"));
+}
+
+fn dragon() -> Scene {
+    let width = 64;
+    let height = 36;
+    let material = color_material(white());
+    let camera = Camera {
+        pos: Vec3::new(0.0, 4.0, 12.0),
+        look_at: 4.0 * Vec3::e2(),
+        up: Vec3::e2(),
+        horizontal_fov: 120_f64.to_radians(),
+        aspect_ratio: width as f64 / height as f64,
+        width: width,
+        height: height
+    };
+    let mesh = Mesh::from_obj_file("scenes/dragon.obj", material);
+    let light = LightSource {
+        pos: Vec3::new(0.0, 10.0, 10.0),
+        col: white()
+    };
+    return Scene {
+        camera: camera,
+        objects: vec![
+            Box::new(mesh.unwrap()),
+            ],
+        ambient_color: white(),
+        lights: vec![light]
+    };
+}
+
+fn spheres() -> Scene {
+    let width = 1280;
+    let height = 720;
+    // Camera:
+    let camera = Camera {
+        pos: Vec3::new(9.0, 4.0, 1.0),
+        look_at: Vec3::new(0.0, 0.0, -3.0),
+        up: Vec3::e2(),
+        horizontal_fov: 120_f64.to_radians(),
+        aspect_ratio: width as f64 / height as f64,
+        width: width,
+        height: height
+    };
+
+    // Objects:
+    let wall1 = Plane {
+        normal: Vec3::e3(),
+        offset: -5.0,
+        material: reflective_material(0.9, white()),
+    };
+    let wall2 = Plane {
+        normal: Vec3::e1(),
+        offset: -5.0,
+        material: reflective_material(0.9, white()),
+    };
+    let floor = Plane {
+        normal: Vec3::e2(),
+        offset: 0.0,
+        material: color_material(white()),
+    };
+    let big_radius = 3.;
+    let small_radius = 1.;
+    let num_spheres = 8;
+    let mut objects: Vec<Box<Surface>> = (0..num_spheres).map(|i| {
+        let angle = (2 * i) as f64 * PI  / (num_spheres as f64);
+        Box::new(Sphere {
+            center: big_radius *
+                Vec3::new(angle.sin(), 0.0, angle.cos()) + small_radius * Vec3::e2(),
+            radius: small_radius,
+            material: color_material(Color::new(
+                (angle / 2.).sin(),
+                (angle / 2. + PI / 3.).sin().abs(),
+                (angle / 2. + PI / 1.5).sin().abs())),
+        }) as Box<Surface>
+    }).collect();
+    objects.push(Box::new(Sphere{
+        center: Vec3::new(0.0, big_radius / 2., 0.0),
+        radius: big_radius / 2.,
+        material: reflective_material(0.9, white()),
+    }));
+    objects.push(Box::new(floor));
+    objects.push(Box::new(wall1));
+    objects.push(Box::new(wall2));
+
+    // Lights:
+    let light = LightSource {
+        pos: Vec3::new(0.0, 10.0, 0.0),
+        col: 0.5 * white(),
+    };
+    let light2 = LightSource {
+        pos: Vec3::new(10.0, 10.0, 10.0),
+        col: 0.5 * white(),
+    };
+
+    // Scene:
+    return Scene {
+        camera: camera,
+        objects: objects,
+        ambient_color: Color::new(1.0, 1.0, 1.0),
+        lights: vec![
+            light,
+            light2,
+            ]
+    }
 }

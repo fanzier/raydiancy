@@ -36,17 +36,21 @@ pub fn vacuum() -> Material {
     }
 }
 
+pub fn reflective_material(reflectance: f64, color: Color) -> Material {
+    Material { color: color, reflectance: reflectance, diffuse: 0.9 - reflectance, specular: 0.1, shininess: 50., refractivity: 0., .. vacuum() }
+}
+
 pub fn glass() -> Material {
-    Material { refraction_index: 1.5, .. vacuum() }
+    Material { refraction_index: 1.5, refractivity: 0.9, specular: 0.1, shininess: 200., color: white(), .. vacuum() }
 }
 
 pub fn neutral_material() -> Material {
     Material {
         color: black(),
         ambient: 0.2,
-        diffuse: 0.8,
-        specular: 0.,
-        shininess: 1.,
+        diffuse: 0.6,
+        specular: 0.2,
+        shininess: 10.,
         reflectance: 0.,
         refractivity: 0.,
         refraction_index: 1.
