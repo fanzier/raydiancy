@@ -14,8 +14,8 @@ pub struct Triangle {
 
 impl Surface for Triangle {
     /// Intersects a ray with a triangle.
-    fn intersect(&self, ray: Ray) -> Option<Intersection> {
-        intersect_triangle(self.a, self.b, self.c, ray).map(|(e,f,_,_,t)| {
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection> {
+        intersect_triangle(self.a, self.b, self.c, ray, t_max).map(|(e,f,_,_,t)| {
             let normal = e.cross(f).normalize();
             // Make the normal vector point to the origin of the ray.
             // This is important for the epsilon displacement for shadow and reflection rays.
@@ -32,7 +32,7 @@ impl Surface for Triangle {
 
 #[inline(always)]
 #[doc(hidden)]
-pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray) -> Option<(Vec3,Vec3,f64,f64,f64)> {
+pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray, t_max: f64) -> Option<(Vec3,Vec3,f64,f64,f64)> {
     let d = ray.dir;
     let e = b - a;
     let f = c - a;
@@ -53,7 +53,7 @@ pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray) -> Option<(Vec3,V
         return None
     }
     let t = q * f / det;
-    if t < EPS {
+    if t < EPS || t > t_max {
         return None
     }
     return Some((e,f,u,v,t))

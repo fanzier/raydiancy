@@ -1,5 +1,4 @@
 use basic::*;
-use std::f64;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::str::FromStr;
@@ -81,16 +80,15 @@ impl Mesh {
 }
 
 impl Surface for Mesh {
-    fn intersect(&self, ray: Ray) -> Option<Intersection> {
-        let mut t_min = f64::INFINITY;
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection> {
+        let mut t_min = t_max;
         let mut nearest_face = None;
         for face in self.faces.iter() {
             let vertices = self.face_vertices(face);
             let a = *vertices[0];
             let b = *vertices[1];
             let c = *vertices[2];
-            intersect_triangle(a, b, c, ray).map(|(_,_,_,_,t)|
-            if t < t_min {
+            intersect_triangle(a, b, c, ray, t_min).map(|(_,_,_,_,t)| {
                 t_min = t;
                 nearest_face = Some(face);
             });

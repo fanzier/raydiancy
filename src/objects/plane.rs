@@ -11,13 +11,13 @@ pub struct Plane {
 }
 
 impl Surface for Plane {
-    fn intersect(&self, ray: Ray) -> Option<Intersection> {
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection> {
         let nd = self.normal * ray.dir;
         if f64::abs(nd) < EPS {
             return None
         }
         let t = (self.offset - self.normal * ray.origin) / nd;
-        if t < EPS {
+        if t < EPS || t > t_max {
             return None
         }
         // Make the normal vector point to the origin of the ray.

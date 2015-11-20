@@ -59,21 +59,19 @@ impl Scene {
             let (x,y) = ((left as f64 / w) - 0.5, 0.5 - (down as f64 / h));
             let ray_dir = camera_dir + x * right + y * up;
             let ray = Ray::newn(self.camera.pos, ray_dir);
-            *col = self.trace_ray(ray, 1.0, 0);
+            *col = self.trace_ray(ray, 1.0, 0, f64::INFINITY);
         }
         return img;
     }
 
     /// Traces the ray through the scene and returns its color.
-    fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize) -> AColor {
+    fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize, t_max: f64) -> AColor {
         let mut nearest: Option<Intersection> = None;
-        let mut nearest_t: f64 = f64::INFINITY;
+        let mut nearest_t: f64 = t_max;
         for obj in self.objects.iter() {
-            if let Some(intersection) = obj.intersect(ray) {
-                if intersection.t < nearest_t {
+            if let Some(intersection) = obj.intersect(ray, nearest_t) {
                     nearest_t = intersection.t;
                     nearest = Some(intersection);
-                }
             }
         }
         intensity * match nearest {
@@ -134,7 +132,7 @@ impl Scene {
         if mat.reflectance > 0. && mat.reflectance * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {
             let reflected_ray = reflect_ray(inter, dir);
             let reflected_intensity = mat.reflectance * intensity;
-            color = color + self.trace_ray(reflected_ray, reflected_intensity, depth + 1);
+            color = color + self.trace_ray(reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
         }
 
         // Compute the REFRACTION:
@@ -163,15 +161,15 @@ impl Scene {
         match refracted_ray {
             None => { // Total internal reflection:
                 let reflected_intensity = intensity * mat.refractivity;
-                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1);
+                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
                 return reflected_intensity * reflected
             },
             Some(refracted_ray) => { // Both reflection and refraction:
                 let fresnel_factor = fresnel(dir, normal, ior);
                 let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
                 let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
-                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1);
-                let refracted = self.trace_ray(refracted_ray, refracted_intensity, depth + 1);
+                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
+                let refracted = self.trace_ray(refracted_ray, refracted_intensity, depth + 1, f64::INFINITY);
                 return refracted_intensity * refracted + reflected_intensity * reflected
             }
         }
