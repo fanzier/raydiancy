@@ -1,19 +1,19 @@
 use lin_alg::*;
 
 /// Computes the specular coefficient.
-pub fn compute_specular(ray_origin_dir: Vec3, light_dir: Vec3, normal: Vec3, shininess: f64) -> f64 {
+pub fn compute_specular(ray_origin_dir: UnitVec3, light_dir: UnitVec3, normal: UnitVec3, shininess: f64) -> f64 {
     let halfway = (light_dir + ray_origin_dir).normalize();
     f64::max(0.0, halfway * normal).powf(shininess)
 }
 
 /// Computes the reflection of i along n.
-pub fn reflect(i: Vec3, n: Vec3) -> Vec3 {
-    i - 2. * (i * n) * n
+pub fn reflect(i: UnitVec3, n: UnitVec3) -> UnitVec3 {
+    Vec3::assert_unit_vector(i - 2. * (i * n) * n)
 }
 
 /// Computes the Fresnel reflection of i on an object surface with normal n and index of refraction (ior) r.
 /// Precisely speaking, r = ior of material being entered / ior of material being exited.
-pub fn fresnel(i: Vec3, n: Vec3, r: f64) -> f64 {
+pub fn fresnel(i: UnitVec3, n: UnitVec3, r: f64) -> f64 {
     let c = -i * n; // = cos(angle of incidence)
     let g = (r * r + c * c - 1.).sqrt(); // = r * cos(angle of refraction)
     let gpc = g + c;
@@ -25,13 +25,13 @@ pub fn fresnel(i: Vec3, n: Vec3, r: f64) -> f64 {
 
 /// Calculates the refraction of i on an object surface with normal n and refraction index quotient r.
 /// Precisely speaking, r = ior of material being entered / ior of material being exited.
-pub fn refract(i: Vec3, n: Vec3, r: f64) -> Option<Vec3> {
+pub fn refract(i: UnitVec3, n: UnitVec3, r: f64) -> Option<UnitVec3> {
     let r = 1. / r;
     let w = -r * i * n;
     let k = 1. + (w + r) * (w - r);
     if k < 0. {
         None
     } else {
-        Some(r * i + (w - k.sqrt()) * n)
+        Some(Vec3::assert_unit_vector(r * i + (w - k.sqrt()) * n))
     }
 }

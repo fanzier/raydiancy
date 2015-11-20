@@ -3,7 +3,7 @@ use basic::*;
 /// Representation of a plane.
 pub struct Plane {
     /// Normal vector of the plane.
-    pub normal: Vec3,
+    pub normal: UnitVec3,
     /// The offset is normal * x for any point x on the plane.
     pub offset: f64,
     /// The material of the plane.
@@ -22,7 +22,7 @@ impl Surface for Plane {
         }
         // Make the normal vector point to the origin of the ray.
         // This is important for the epsilon displacement for shadow and reflection rays.
-        let normal = -nd.signum() * self.normal;
+        let normal = if nd < 0. { self.normal } else { -self.normal };
         Some(Intersection::new(ray, t, normal, self.material))
     }
 

@@ -19,7 +19,7 @@ impl Surface for Triangle {
             let normal = e.cross(f).normalize();
             // Make the normal vector point to the origin of the ray.
             // This is important for the epsilon displacement for shadow and reflection rays.
-            let normal = -(normal * ray.dir).signum() * normal;
+            let normal = if normal * ray.dir < 0. { normal } else { -normal };
             Intersection::new(ray, t, normal, self.material)
         })
     }

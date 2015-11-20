@@ -58,7 +58,7 @@ impl Scene {
         for (left,down,col) in img.iter_mut() {
             let (x,y) = ((left as f64 / w) - 0.5, 0.5 - (down as f64 / h));
             let ray_dir = camera_dir + x * right + y * up;
-            let ray = Ray::new(self.camera.pos, ray_dir);
+            let ray = Ray::newn(self.camera.pos, ray_dir);
             *col = self.trace_ray(ray, 1.0, 0);
         }
         return img;
@@ -98,7 +98,7 @@ impl Scene {
     /// Computes the illuminance at the given intersection point.
     /// This means that ambient, diffuse, and specular reflection are taken into account,
     /// but not mirror-like reflection or refraction for transparent objects.
-    fn compute_illuminance(&self, dir: Vec3, inter: &Intersection) -> AColor {
+    fn compute_illuminance(&self, dir: UnitVec3, inter: &Intersection) -> AColor {
         let mat = inter.material;
         // Start with the ambient color of the object.
         let mut color = (mat.ambient * (self.ambient_color * mat.color)).with_alpha();
@@ -126,7 +126,7 @@ impl Scene {
     }
 
     /// Computes the refraction for transparent objects and reflection for reflective ones.
-    fn compute_reflection_refraction(&self, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
+    fn compute_reflection_refraction(&self, dir: UnitVec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mut color = AColor::new(0., 0., 0.);
         let mat = inter.material;
 
@@ -146,7 +146,7 @@ impl Scene {
     }
 
     /// Traces the reflected and refracted (except in case of total reflection).
-    fn compute_recursive_refraction(&self, dir: Vec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
+    fn compute_recursive_refraction(&self, dir: UnitVec3, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         let mat = inter.material;
         // TODO: We assume that the ray travels to or from vacuum (which is almost always the case).
         // But, for example, if the ray travels from glass (1.5) to water (1.33),

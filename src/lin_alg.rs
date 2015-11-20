@@ -1,5 +1,6 @@
 use std::ops;
 use std::cmp;
+use std::marker::PhantomData;
 pub use std::f64::consts::PI;
 
 /// The smallest difference for values to be considered equal.
@@ -19,9 +20,45 @@ pub fn appr(f: f64, g: f64) -> bool {
     if (f - g).abs() < EPS { true } else { false }
 }
 
+/// Represents a three-dimensional vector with a type marker `Marker`.
+/// Note that most of the time, you want `Vec3` instead. (Exception: function parameters)
+///
+/// This marker is used to prove that certain vectors are normalized.
+/// If you write a function that accepts a vector, it should accept a `Vec3M<M>`.
+/// If the function returns a vector, it should be `UnitVec3`
+/// if it's guaranteed to be a unit vector, and `Vec3` otherwise.
+/// **Accept the most general type and return the most specialized type.**
+///
+/// You can always convert any vector into a `Vec3`, using `Vec3M<M>::to`.
+#[derive(Debug, Clone)]
+pub struct Vec3M<Marker: Clone> {
+    x: [f64; 3],
+    phantom: PhantomData<Marker>,
+}
+
+impl<M: Clone> Copy for Vec3M<M> { }
+
 #[derive(Debug, Copy, Clone)]
-pub struct Vec3 {
-    x:[f64; 3]
+struct VecMarker;
+
+#[derive(Debug, Copy, Clone)]
+struct UnitMarker;
+
+/// Represents a three-dimensional vector.
+pub type Vec3 = Vec3M<VecMarker>;
+
+/// Represents a three-dimensional unit vector, i.e. its `norm()` is guaranteed to be 1.0.
+pub type UnitVec3 = Vec3M<UnitMarker>;
+
+impl ops::Neg for UnitVec3 {
+    type Output = UnitVec3;
+
+    fn neg(self) -> UnitVec3 {
+        UnitVec3 {
+            x: [-self.x[0], -self.x[1], -self.x[2]],
+            phantom: PhantomData
+        }
+    }
 }
 
 impl ops::Neg for Vec3 {
@@ -32,39 +69,39 @@ impl ops::Neg for Vec3 {
     }
 }
 
-impl ops::Add for Vec3 {
+impl<M,N> ops::Add<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     type Output = Vec3;
 
-    fn add(self, b: Vec3) -> Vec3 {
-        Vec3 { x: [self[0] + b[0], self[1] + b[1], self[2] + b[2]]}
+    fn add(self, b: Vec3M<N>) -> Vec3 {
+        Vec3::new(self[0] + b[0], self[1] + b[1], self[2] + b[2])
     }
 }
 
-impl ops::Sub for Vec3 {
+impl<M,N> ops::Sub<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     type Output = Vec3;
 
-    fn sub(self, b: Vec3) -> Vec3 {
-        Vec3 { x: [self[0] - b[0], self[1] - b[1], self[2] - b[2]]}
+    fn sub(self, b: Vec3M<N>) -> Vec3 {
+        Vec3::new(self[0] - b[0], self[1] - b[1], self[2] - b[2])
     }
 }
 
-impl ops::Mul<Vec3> for f64 {
+impl<M> ops::Mul<Vec3M<M>> for f64 where M: Clone {
     type Output = Vec3;
 
-    fn mul(self: f64, v: Vec3) -> Vec3 {
-        Vec3 { x: [self * v[0], self * v[1], self * v[2]]}
+    fn mul(self: f64, v: Vec3M<M>) -> Vec3 {
+        Vec3::new(self * v[0], self * v[1], self * v[2])
     }
 }
 
-impl ops::Mul<Vec3> for Vec3 {
+impl<M,N> ops::Mul<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     type Output = f64;
 
-    fn mul(self: Vec3, v: Vec3) -> f64 {
+    fn mul(self: Vec3M<M>, v: Vec3M<N>) -> f64 {
         self[0] * v[0] + self[1] * v[1] + self[2] * v[2]
     }
 }
 
-impl ops::Div<f64> for Vec3 {
+impl<M> ops::Div<f64> for Vec3M<M> where M: Clone {
     type Output = Vec3;
 
     fn div(self, s: f64) -> Vec3 {
@@ -73,7 +110,7 @@ impl ops::Div<f64> for Vec3 {
     }
 }
 
-impl ops::Index<usize> for Vec3 {
+impl<M> ops::Index<usize> for Vec3M<M> where M: Clone {
     type Output = f64;
 
     fn index(&self, idx: usize) -> &f64 {
@@ -81,8 +118,8 @@ impl ops::Index<usize> for Vec3 {
     }
 }
 
-impl cmp::PartialEq for Vec3 {
-    fn eq(&self, v: &Vec3) -> bool {
+impl<M,N> cmp::PartialEq<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+    fn eq(&self, v: &Vec3M<N>) -> bool {
         for i in 0..3 {
             if !appr(self.x[i], v.x[i]) {
                 return false
@@ -92,37 +129,73 @@ impl cmp::PartialEq for Vec3 {
     }
 }
 
-impl Vec3 {
+impl<M: Clone> Vec3M<M> {
+    /// Creates a vector with the given coordinates.
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
-        Vec3 { x: [x,y,z] }
+        Vec3 {
+            x: [x,y,z],
+            phantom: PhantomData,
+        }
     }
 
+    /// Creates a vector with coordinates given in the array of length 3.
+    pub fn from_array(arr: [f64; 3]) -> Vec3 {
+        Vec3 {
+            x: arr,
+            phantom: PhantomData,
+        }
+    }
+
+    /// Converts a (possibly) polymorphic vector to a `Vec3`.
+    pub fn to(self) -> Vec3 {
+        Vec3::from_array(self.x)
+    }
+
+    /// Creates a `UnitVec3` out of any given vector. Panics if its norm is not 1.0.
+    pub fn assert_unit_vector(v: Vec3M<M>) -> UnitVec3 {
+        assert!(appr(v.norm2(), 1.));
+        UnitVec3 { x: v.x, phantom: PhantomData }
+    }
+
+    /// Returns the zero vector.
     pub fn zero() -> Vec3 {
         Vec3::new(0.0, 0.0, 0.0)
     }
+
+    /// Returns a vector filled with ones.
     pub fn ones() -> Vec3 {
         Vec3::new(1.0, 1.0, 1.0)
     }
-    pub fn e1() -> Vec3 {
-        Vec3::new(1.0, 0.0, 0.0)
-    }
-    pub fn e2() -> Vec3 {
-        Vec3::new(0.0, 1.0, 0.0)
-    }
-    pub fn e3() -> Vec3 {
-        Vec3::new(0.0, 0.0, 1.0)
+
+    /// Returns the unit vector in positive x-direction.
+    pub fn e1() -> UnitVec3 {
+        Vec3::assert_unit_vector(Vec3::new(1.0, 0.0, 0.0))
     }
 
+    /// Returns the unit vector in positive y-direction.
+    pub fn e2() -> UnitVec3 {
+        Vec3::assert_unit_vector(Vec3::new(0.0, 1.0, 0.0))
+    }
+
+    /// Returnrs the unit vector in positive z-direction.
+    pub fn e3() -> UnitVec3 {
+        Vec3::assert_unit_vector(Vec3::new(0.0, 0.0, 1.0))
+    }
+
+    /// Computes the norm of the vector.
     pub fn norm(self) -> f64 {
         f64::sqrt(self * self)
     }
 
+    /// Computes the square of the norm (saves a square root operation compared to `norm()`).
     pub fn norm2(self) -> f64 {
         self * self
     }
 
-    pub fn normalize(self) -> Vec3 {
-        self / self.norm()
+    /// Returns the unit vector pointing in the same direction.
+    pub fn normalize(self) -> UnitVec3 {
+        let n = self / self.norm();
+        UnitVec3 { x: n.x, phantom: PhantomData }
     }
 
     /// Computes the cross product of two vectors
@@ -137,7 +210,7 @@ impl Vec3 {
     /// assert_eq!(v * c, 0.0);
     /// assert_eq!(w * c, 0.0);
     /// ```
-    pub fn cross(self, v: Vec3) -> Vec3 {
+    pub fn cross<N>(self, v: Vec3M<N>) -> Vec3 where M: Clone, N: Clone {
         Vec3::new(self.x[1] * v.x[2] - self.x[2] * v.x[1],
             self.x[2] * v.x[0] - self.x[0] * v.x[2],
             self.x[0] * v.x[1] - self.x[1] * v.x[0])
@@ -174,10 +247,10 @@ impl ops::Mul<Matrix34> for Matrix34 {
     }
 }
 
-impl ops::Mul<Vec3> for Matrix34 {
+impl<M> ops::Mul<Vec3M<M>> for Matrix34 where M: Clone {
     type Output = Vec3;
 
-    fn mul(self, v: Vec3) -> Vec3 {
+    fn mul(self, v: Vec3M<M>) -> Vec3 {
         let mut res: [f64;3] = [0.0; 3];
         for i in 0..3 {
             let mut entry: f64 = 0.0;
@@ -187,7 +260,7 @@ impl ops::Mul<Vec3> for Matrix34 {
             entry += self.m[i][3];
             res[i] = entry
         }
-        Vec3 { x: res }
+        Vec3::from_array(res)
     }
 }
 

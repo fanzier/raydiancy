@@ -26,7 +26,7 @@ fn bunny() -> Scene {
     let camera = Camera {
         pos: Vec3::new(0.0, 4.0, 12.0),
         look_at: 4.0 * Vec3::e2(),
-        up: Vec3::e2(),
+        up: Vec3::e2().to(),
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,
@@ -54,7 +54,7 @@ fn dragon() -> Scene {
     let camera = Camera {
         pos: Vec3::new(0.0, 4.0, 12.0),
         look_at: 4.0 * Vec3::e2(),
-        up: Vec3::e2(),
+        up: Vec3::e2().to(),
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,
@@ -82,7 +82,7 @@ fn spheres() -> Scene {
     let camera = Camera {
         pos: Vec3::new(9.0, 4.0, 1.0),
         look_at: Vec3::new(0.0, 0.0, -3.0),
-        up: Vec3::e2(),
+        up: Vec3::e2().to(),
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,

@@ -101,7 +101,7 @@ impl Surface for Mesh {
             let normal = (*vertices[1] - *vertices[0]).cross(*vertices[2] - *vertices[0]).normalize();
             // Make the normal vector point to the origin of the ray.
             // This is important for the epsilon displacement for shadow and reflection rays.
-            let normal = -(normal * ray.dir).signum() * normal;
+            let normal = if normal * ray.dir < 0. { normal } else { -normal };
             Intersection::new(ray, t_min, normal, self.material)
         })
     }
