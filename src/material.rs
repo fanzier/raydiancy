@@ -23,6 +23,7 @@ pub struct Material {
     pub refraction_index: f64,
 }
 
+/// Creates a material that behaves like nothing.
 pub fn vacuum() -> Material {
     Material {
         color: black(),
@@ -36,14 +37,30 @@ pub fn vacuum() -> Material {
     }
 }
 
+/// Creates a mirror-like material of the given `reflectance` with the given `color`.
 pub fn reflective_material(reflectance: f64, color: Color) -> Material {
-    Material { color: color, reflectance: reflectance, diffuse: 0.9 - reflectance, specular: 0.1, shininess: 50., refractivity: 0., .. vacuum() }
+    Material {
+        color: color,
+        reflectance: reflectance,
+        diffuse: 0.9 - reflectance,
+        specular: 0.1,
+        shininess: 50.,
+        refractivity: 0.,
+        .. vacuum() }
 }
 
+/// Creates a material that looks like glass.
 pub fn glass() -> Material {
-    Material { refraction_index: 1.5, refractivity: 0.9, specular: 0.1, shininess: 200., color: white(), .. vacuum() }
+    Material {
+        refraction_index: 1.5,
+        refractivity: 0.9,
+        specular: 0.1,
+        shininess: 200.,
+        color: white(),
+        .. vacuum() }
 }
 
+/// Creates a diffuse black material.
 pub fn neutral_material() -> Material {
     Material {
         color: black(),
@@ -57,6 +74,7 @@ pub fn neutral_material() -> Material {
     }
 }
 
+/// Creates a diffuse material of the given color.
 pub fn color_material(c: Color) -> Material {
     Material { color: c, .. neutral_material()}
 }

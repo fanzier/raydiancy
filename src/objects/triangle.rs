@@ -1,5 +1,6 @@
 use basic::*;
 
+/// Represents a triangle.
 pub struct Triangle {
     // First point of the triangle.
     pub a: Vec3,
@@ -30,6 +31,7 @@ impl Surface for Triangle {
 }
 
 #[inline(always)]
+#[doc(hidden)]
 pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray) -> Option<(Vec3,Vec3,f64,f64,f64)> {
     let d = ray.dir;
     let e = b - a;
@@ -58,6 +60,7 @@ pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray) -> Option<(Vec3,V
 }
 
 #[inline(always)]
+#[doc(hidden)]
 pub fn is_triangle_hit_by(a: Vec3, b: Vec3, c: Vec3, ray: Ray, t_max: f64) -> bool {
     let d = ray.dir;
     let e = b - a;

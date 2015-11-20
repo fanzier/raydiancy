@@ -5,7 +5,7 @@ use std::io::{self, BufRead};
 use std::str::FromStr;
 use objects::triangle::{intersect_triangle, is_triangle_hit_by};
 
-/// Triangle that is part of a mesh.
+/// Represents a triangle that is part of a mesh.
 struct Face {
     pub vertex_indices: (usize, usize, usize)
 }
@@ -16,6 +16,9 @@ impl Face {
     }
 }
 
+/// Represents a triangle mesh.
+///
+/// It is usually constructed from an OBJ file using `Mesh::from_obj_file`.
 pub struct Mesh {
     vertices: Vec<Vec3>,
     faces: Vec<Face>,

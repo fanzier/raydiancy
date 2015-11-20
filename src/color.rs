@@ -84,10 +84,12 @@ impl ops::Mul<Color> for Color {
     }
 }
 
+/// The color black.
 pub fn black() -> Color {
     Color::new(0., 0., 0.)
 }
 
+/// The color white.
 pub fn white() -> Color {
     Color::new(1., 1., 1.)
 }

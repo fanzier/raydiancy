@@ -24,7 +24,7 @@ pub fn fresnel(i: Vec3, n: Vec3, r: f64) -> f64 {
 }
 
 /// Calculates the refraction of i on an object surface with normal n and refraction index quotient r.
-/// Precisely speaking, r = new_index / old_index.
+/// Precisely speaking, r = ior of material being entered / ior of material being exited.
 pub fn refract(i: Vec3, n: Vec3, r: f64) -> Option<Vec3> {
     let r = 1. / r;
     let w = -r * i * n;
