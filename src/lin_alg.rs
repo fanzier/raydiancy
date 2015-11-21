@@ -152,9 +152,9 @@ impl<M: Clone> Vec3M<M> {
     }
 
     /// Creates a `UnitVec3` out of any given vector. Panics if its norm is not 1.0.
-    pub fn assert_unit_vector(v: Vec3M<M>) -> UnitVec3 {
-        assert!(appr(v.norm2(), 1.));
-        UnitVec3 { x: v.x, phantom: PhantomData }
+    pub fn assert_unit_vector(self: Vec3M<M>) -> UnitVec3 {
+        assert!(appr(self.norm2(), 1.));
+        UnitVec3 { x: self.x, phantom: PhantomData }
     }
 
     /// Returns the zero vector.
@@ -169,17 +169,39 @@ impl<M: Clone> Vec3M<M> {
 
     /// Returns the unit vector in positive x-direction.
     pub fn e1() -> UnitVec3 {
-        Vec3::assert_unit_vector(Vec3::new(1.0, 0.0, 0.0))
+        Vec3::new(1.0, 0.0, 0.0).assert_unit_vector()
     }
 
     /// Returns the unit vector in positive y-direction.
     pub fn e2() -> UnitVec3 {
-        Vec3::assert_unit_vector(Vec3::new(0.0, 1.0, 0.0))
+        Vec3::new(0.0, 1.0, 0.0).assert_unit_vector()
     }
 
-    /// Returnrs the unit vector in positive z-direction.
+    /// Returns the unit vector in positive z-direction.
     pub fn e3() -> UnitVec3 {
-        Vec3::assert_unit_vector(Vec3::new(0.0, 0.0, 1.0))
+        Vec3::new(0.0, 0.0, 1.0).assert_unit_vector()
+    }
+
+    /// Returns the unit vector in positive i-th direction
+    pub fn e(i: usize) -> UnitVec3 {
+        let mut arr = [0.0, 0.0, 0.0];
+        arr[i] = 1.0;
+        Vec3::from_array(arr).assert_unit_vector()
+    }
+
+    /// Returns the x-coordinate.
+    pub fn x(self) -> f64 {
+        self[0]
+    }
+
+    /// Returns the y-coordinate.
+    pub fn y(self) -> f64 {
+        self[1]
+    }
+
+    /// Returns the z-coordinate.
+    pub fn z(self) -> f64 {
+        self[2]
     }
 
     /// Computes the norm of the vector.
@@ -214,6 +236,16 @@ impl<M: Clone> Vec3M<M> {
         Vec3::new(self.x[1] * v.x[2] - self.x[2] * v.x[1],
             self.x[2] * v.x[0] - self.x[0] * v.x[2],
             self.x[0] * v.x[1] - self.x[1] * v.x[0])
+    }
+
+    /// Returns the coordinate-wise maximum of the two vectors.
+    pub fn max<N>(self, v: Vec3M<N>) -> Vec3 where M: Clone, N: Clone {
+        Vec3::new(self[0].max(v[0]), self[1].max(v[1]), self[2].max(v[2]))
+    }
+
+    /// Returns the coordinate-wise minimum of the two vectors.
+    pub fn min<N>(self, v: Vec3M<N>) -> Vec3 where M: Clone, N: Clone {
+        Vec3::new(self[0].min(v[0]), self[1].min(v[1]), self[2].min(v[2]))
     }
 }
 
