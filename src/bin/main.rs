@@ -14,9 +14,52 @@ macro_rules! render {
 }
 
 fn main() {
+    render!(aabb);
     render!(bunny);
     render!(dragon);
     render!(spheres);
+}
+
+fn aabb() -> Scene {
+    let width = 1280;
+    let height = 720;
+    // Camera:
+    let camera = Camera {
+        pos: Vec3::new(10.0, 10.0, 10.0),
+        look_at: Vec3::new(0.0, 0.0, 0.0),
+        up: Vec3::e2().to(),
+        horizontal_fov: 120_f64.to_radians(),
+        aspect_ratio: width as f64 / height as f64,
+        width: width,
+        height: height
+    };
+
+    // Objects:
+    let aabb = Aabb::new(Vec3::zero(), 5.0 * Vec3::ones());
+    let sphere = Sphere {
+        center: 2.5 * Vec3::ones(),
+        radius: 2.0,
+        material: color_material(Color::new(1.0, 0.0, 0.0))
+    };
+
+    let objects: Vec<Box<Surface>> = vec![
+        Box::new(sphere),
+        Box::new(aabb),
+    ];
+
+    // Lights:
+    let light = LightSource {
+        pos: Vec3::new(0.0, 10.0, 0.0),
+        col: white(),
+    };
+
+    // Scene:
+    return Scene {
+        camera: camera,
+        objects: objects,
+        ambient_color: Color::new(1.0, 1.0, 1.0),
+        lights: vec![ light ]
+    }
 }
 
 fn bunny() -> Scene {
