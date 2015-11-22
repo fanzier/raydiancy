@@ -1,4 +1,5 @@
 use basic::*;
+use objects::surface::*;
 
 /// Representation of a plane.
 pub struct Plane {
@@ -36,5 +37,9 @@ impl Surface for Plane {
             return false
         }
         t < t_max
+    }
+
+    fn bounding_box(&self) -> Option<Aabb> {
+        None
     }
 }

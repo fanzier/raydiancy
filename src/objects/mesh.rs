@@ -1,7 +1,9 @@
 use basic::*;
+use std::f64;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::str::FromStr;
+use objects::surface::*;
 use objects::triangle::{intersect_triangle, is_triangle_hit_by};
 
 /// Represents a triangle that is part of a mesh.
@@ -77,6 +79,19 @@ impl Mesh {
         tokens.next().and_then(|s| str::parse::<T>(s).ok()).and_then(|y|
         tokens.next().and_then(|s| str::parse::<T>(s).ok()).map(|z| (x,y,z))))
     }
+
+    /// Computes the bounding box for the given face.
+    fn bounding_box_face(&self, f: &Face) -> Aabb {
+        let min = self.face_vertices(f).iter().fold(
+            f64::INFINITY * Vec3::ones(),
+            |acc, &&item| acc.max(item)
+        );
+        let max = self.face_vertices(f).iter().fold(
+            -f64::INFINITY * Vec3::ones(),
+            |acc, &&item| acc.max(item)
+        );
+        Aabb::new(min, max)
+    }
 }
 
 impl Surface for Mesh {
@@ -115,5 +130,21 @@ impl Surface for Mesh {
             }
         }
         false
+    }
+
+    fn bounding_box(&self) -> Option<Aabb> {
+        if self.faces.len() == 0 {
+            return None
+        }
+        let min = f64::INFINITY * Vec3::ones();
+        let max = -f64::INFINITY * Vec3::ones();
+        let (min, max): (Vec3, Vec3)= self.faces.iter().fold(
+            (min,max),
+            |(acc_min, acc_max), item| {
+                let aabb = self.bounding_box_face(item);
+                (acc_min.min(aabb.min()), acc_max.max(aabb.max()))
+            }
+        );
+        Some(Aabb::new(min, max))
     }
 }

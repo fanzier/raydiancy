@@ -1,4 +1,5 @@
 use basic::*;
+use objects::surface::*;
 
 /// Represents a triangle.
 pub struct Triangle {
@@ -27,6 +28,12 @@ impl Surface for Triangle {
     /// Checks whether the ray hits the triangle.
     fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
         is_triangle_hit_by(self.a, self.b, self.c, ray, t_max)
+    }
+
+    fn bounding_box(&self) -> Option<Aabb> {
+        let min = self.a.min(self.b).min(self.c);
+        let max = self.a.max(self.b).max(self.c);
+        Some(Aabb::new(min, max))
     }
 }
 

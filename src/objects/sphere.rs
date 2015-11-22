@@ -1,4 +1,5 @@
 use basic::*;
+use objects::surface::*;
 
 /// Representation of a sphere.
 pub struct Sphere {
@@ -37,5 +38,12 @@ impl Surface for Sphere {
             return false;
         }
         t < t_max
+    }
+
+    fn bounding_box(&self) -> Option<Aabb> {
+        Some(Aabb::new(
+            self.center - self.radius * Vec3::ones(),
+            self.center + self.radius * Vec3::ones(),
+        ))
     }
 }
