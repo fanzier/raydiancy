@@ -20,6 +20,7 @@ fn bounding_box_material() -> Material {
 }
 
 /// Represents an axis-aligned bounding box.
+#[derive(Copy, Clone, Debug)]
 pub struct Aabb {
     vertices: [Vec3; 2]
 }
@@ -38,6 +39,15 @@ impl Aabb {
     /// Returns the vertex with greatest coordinates.
     pub fn max(&self) -> Vec3 {
         self.vertices[1]
+    }
+
+    /// Returns the tightest bounding box around the union of the two given ones.
+    pub fn union(&self, b: &Aabb) -> Aabb {
+        Aabb { vertices: [
+            self.vertices[0].min(b.vertices[0]),
+            self.vertices[1].max(b.vertices[1])
+            ],
+        }
     }
 
     /// Checks wether the intersection of the ray from t=EPS to t=t1 and the box is nonempty.

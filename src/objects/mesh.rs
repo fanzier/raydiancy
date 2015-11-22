@@ -3,6 +3,7 @@ use std::f64;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::str::FromStr;
+use objects::bvh::*;
 use objects::surface::*;
 use objects::triangle::{intersect_triangle, is_triangle_hit_by};
 
@@ -33,7 +34,7 @@ impl Mesh {
     }
 
     /// Builds a mesh from the OBJ file `path` and out of the given `material`.
-    pub fn from_obj_file(path: &str, material: Material) -> io::Result<Mesh> {
+    pub fn from_obj_file(path: &str, material: Material) -> io::Result<BVH<Mesh>> {
         let mut vertices: Vec<Vec3> = vec![];
         let mut normals: Vec<Vec3> = vec![];
         let mut faces: Vec<Face> = vec![];
@@ -65,11 +66,11 @@ impl Mesh {
                 _ => continue
             }
         }
-        Ok(Mesh {
+        Ok(BVH::new(Mesh {
             vertices: vertices,
             faces: faces,
             material: material,
-        })
+        }))
     }
 
     fn parse3<'a, I, T>(tokens: &mut I) -> Option<(T,T,T)>
@@ -146,5 +147,43 @@ impl Surface for Mesh {
             }
         );
         Some(Aabb::new(min, max))
+    }
+}
+
+impl SurfaceContainer for Mesh {
+    fn elem_is_hit_by(&self, i: usize, ray: Ray, t_max: f64) -> bool {
+        let vertices = self.face_vertices(&self.faces[i]);
+        return is_triangle_hit_by(*vertices[0], *vertices[1], *vertices[2], ray, t_max)
+    }
+
+    fn elem_intersect(&self, i: usize, ray: Ray, t_max: f64) -> Option<Intersection> {
+        let ref face = self.faces[i];
+        let vertices = self.face_vertices(face);
+        let a = *vertices[0];
+        let b = *vertices[1];
+        let c = *vertices[2];
+        intersect_triangle(a, b, c, ray, t_max).map(|(_,_,_,_,t)| {
+            // TODO: Interpolate normal if vertex normals are given.
+            let normal = (b - a).cross(c - a).normalize();
+            // Make the normal vector point to the origin of the ray.
+            // This is important for the epsilon displacement for shadow and reflection rays.
+            let normal = if normal * ray.dir < 0. { normal } else { -normal };
+            Intersection::new(ray, t, normal, self.material)
+        })
+    }
+
+    fn elem_bounding_box(&self, i: usize) -> Option<Aabb> {
+        let ref face = self.faces[i];
+        let vertices = self.face_vertices(face);
+        let a = *vertices[0];
+        let b = *vertices[1];
+        let c = *vertices[2];
+        let min = a.min(b).min(c);
+        let max = a.max(b).max(c);
+        Some(Aabb::new(min, max))
+    }
+
+    fn count(&self) -> usize {
+        self.faces.len()
     }
 }
