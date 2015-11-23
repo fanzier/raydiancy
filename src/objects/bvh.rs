@@ -66,7 +66,7 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
         }
     }
 
-    fn node_intersect(&self, node: &BVHNode, ray: Ray, t_max: f64) -> Option<Intersection> {
+    fn node_intersect<'a, 'b: 'a>(&'a self, node: &'b BVHNode, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         if !node.bounding_box.passes_through(ray, t_max) {
             return None
         }
@@ -118,7 +118,7 @@ impl<ContainerType> Surface for BVH<ContainerType> where ContainerType: SurfaceC
         self.node_is_hit_by(&self.root_node, ray, t_max)
     }
 
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option <Intersection> {
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         self.node_intersect(&self.root_node, ray, t_max)
     }
 
@@ -172,7 +172,7 @@ impl BVHNode {
 pub trait SurfaceContainer {
     /// Returns information about the intersection of the object and the ray, if one exists.
     /// If the distance is greater that `t_max`, it returns `None`.
-    fn elem_intersect(&self, idx: usize, ray: Ray, t_max: f64) -> Option<Intersection>;
+    fn elem_intersect(&self, idx: usize, ray: Ray, t_max: f64) -> Option<DelayedIntersection>;
 
     /// Checks whether the ray intersects the object, computes no additional information.
     /// If the distance is greater than `t_max`, it returns `false`.

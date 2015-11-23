@@ -75,3 +75,31 @@ impl Intersection {
         }
     }
 }
+
+/// Represents partial information about an intersection.
+/// The distance from the origin of the ray is directly available but nothing more.
+/// The actual intersection can be computed using `eval` which might be expensive.
+// TODO: Remove the `FnMut` workaround to make boxed `FnOnce`s work,
+// as soon as FnBox (or similar) is in stable Rust.
+pub struct DelayedIntersection<'a> {
+    pub t: f64,
+    f: Box<FnMut() -> Intersection + 'a>,
+}
+
+impl<'a> DelayedIntersection<'a> {
+    // Creates a `DelayedIntersection`, given a closure that returns the intersection.
+    pub fn new<T: FnOnce() -> Intersection + 'a>(t: f64, f: T) -> DelayedIntersection<'a> {
+        let mut opt_f = Some(f);
+        let boxed_f: Box<FnMut() -> Intersection> = Box::new(move || (opt_f.take().unwrap())());
+        DelayedIntersection { t: t, f: boxed_f }
+    }
+
+    /// Computes the intersection information.
+    pub fn eval(self) -> Intersection {
+        unsafe {
+            use std::mem;
+            let this: *mut Box<FnMut() -> Intersection + 'a> = mem::transmute(&self.f);
+            (**this)()
+        }
+    }
+}

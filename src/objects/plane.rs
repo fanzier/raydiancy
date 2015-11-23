@@ -12,7 +12,7 @@ pub struct Plane {
 }
 
 impl Surface for Plane {
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection> {
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         let nd = self.normal * ray.dir;
         if f64::abs(nd) < EPS {
             return None
@@ -21,10 +21,12 @@ impl Surface for Plane {
         if t < EPS || t > t_max {
             return None
         }
-        // Make the normal vector point to the origin of the ray.
-        // This is important for the epsilon displacement for shadow and reflection rays.
-        let normal = if nd < 0. { self.normal } else { -self.normal };
-        Some(Intersection::new(ray, t, normal, self.material))
+        Some(DelayedIntersection::new(t, move || {
+            // Make the normal vector point to the origin of the ray.
+            // This is important for the epsilon displacement for shadow and reflection rays.
+            let normal = if nd < 0. { self.normal } else { -self.normal };
+            Intersection::new(ray, t, normal, self.material)
+        }))
     }
 
     fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {

@@ -15,13 +15,15 @@ pub struct Triangle {
 
 impl Surface for Triangle {
     /// Intersects a ray with a triangle.
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection> {
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         intersect_triangle(self.a, self.b, self.c, ray, t_max).map(|(e,f,_,_,t)| {
-            let normal = e.cross(f).normalize();
-            // Make the normal vector point to the origin of the ray.
-            // This is important for the epsilon displacement for shadow and reflection rays.
-            let normal = if normal * ray.dir < 0. { normal } else { -normal };
-            Intersection::new(ray, t, normal, self.material)
+            DelayedIntersection::new(t, move || {
+                let normal = e.cross(f).normalize();
+                // Make the normal vector point to the origin of the ray.
+                // This is important for the epsilon displacement for shadow and reflection rays.
+                let normal = if normal * ray.dir < 0. { normal } else { -normal };
+                Intersection::new(ray, t, normal, self.material)
+            })
         })
     }
 

@@ -96,7 +96,7 @@ impl Mesh {
 }
 
 impl Surface for Mesh {
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection> {
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         let mut t_min = t_max;
         let mut nearest_face = None;
         for face in self.faces.iter() {
@@ -110,13 +110,15 @@ impl Surface for Mesh {
             });
         }
         nearest_face.map(|f| {
-            let vertices = self.face_vertices(f);
-            // TODO: Interpolate normal if vertex normals are given.
-            let normal = (*vertices[1] - *vertices[0]).cross(*vertices[2] - *vertices[0]).normalize();
-            // Make the normal vector point to the origin of the ray.
-            // This is important for the epsilon displacement for shadow and reflection rays.
-            let normal = if normal * ray.dir < 0. { normal } else { -normal };
-            Intersection::new(ray, t_min, normal, self.material)
+            DelayedIntersection::new(t_min, move || {
+                let vertices = self.face_vertices(f);
+                // TODO: Interpolate normal if vertex normals are given.
+                let normal = (*vertices[1] - *vertices[0]).cross(*vertices[2] - *vertices[0]).normalize();
+                // Make the normal vector point to the origin of the ray.
+                // This is important for the epsilon displacement for shadow and reflection rays.
+                let normal = if normal * ray.dir < 0. { normal } else { -normal };
+                Intersection::new(ray, t_min, normal, self.material)
+            })
         })
     }
 
@@ -156,19 +158,21 @@ impl SurfaceContainer for Mesh {
         return is_triangle_hit_by(*vertices[0], *vertices[1], *vertices[2], ray, t_max)
     }
 
-    fn elem_intersect(&self, i: usize, ray: Ray, t_max: f64) -> Option<Intersection> {
+    fn elem_intersect(&self, i: usize, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         let ref face = self.faces[i];
         let vertices = self.face_vertices(face);
         let a = *vertices[0];
         let b = *vertices[1];
         let c = *vertices[2];
         intersect_triangle(a, b, c, ray, t_max).map(|(_,_,_,_,t)| {
-            // TODO: Interpolate normal if vertex normals are given.
-            let normal = (b - a).cross(c - a).normalize();
-            // Make the normal vector point to the origin of the ray.
-            // This is important for the epsilon displacement for shadow and reflection rays.
-            let normal = if normal * ray.dir < 0. { normal } else { -normal };
-            Intersection::new(ray, t, normal, self.material)
+            DelayedIntersection::new(t, move || {
+                // TODO: Interpolate normal if vertex normals are given.
+                let normal = (b - a).cross(c - a).normalize();
+                // Make the normal vector point to the origin of the ray.
+                // This is important for the epsilon displacement for shadow and reflection rays.
+                let normal = if normal * ray.dir < 0. { normal } else { -normal };
+                Intersection::new(ray, t, normal, self.material)
+            })
         })
     }
 

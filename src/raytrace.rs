@@ -66,7 +66,7 @@ impl Scene {
 
     /// Traces the ray through the scene and returns its color.
     fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize, t_max: f64) -> AColor {
-        let mut nearest: Option<Intersection> = None;
+        let mut nearest: Option<DelayedIntersection> = None;
         let mut nearest_t: f64 = t_max;
         for obj in self.objects.iter() {
             if let Some(intersection) = obj.intersect(ray, nearest_t) {
@@ -75,7 +75,7 @@ impl Scene {
             }
         }
         intensity * match nearest {
-            Some(ref intersection) => self.shade(ray, intersection, intensity, depth + 1),
+            Some(intersection) => self.shade(ray, &intersection.eval(), intensity, depth + 1),
             None => AColor::transparent()
         }
     }

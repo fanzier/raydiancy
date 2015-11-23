@@ -10,7 +10,7 @@ pub use objects::aabb::*;
 pub trait Surface {
     /// Returns information about the intersection of the object and the ray, if one exists.
     /// If the distance is greater that `t_max`, it returns `None`.
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<Intersection>;
+    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection>;
 
     /// Checks whether the ray intersects the object, computes no additional information.
     /// If the distance is greater than `t_max`, it returns `false`.

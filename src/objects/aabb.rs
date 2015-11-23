@@ -183,7 +183,7 @@ impl Aabb {
 
     /// Computes the intersection with this bounding box.
     /// This is supposed to be used for debugging only.
-    pub fn intersect(&self, r: Ray, t1: f64) -> Option<Intersection> {
+    pub fn intersect(&self, r: Ray, t1: f64) -> Option<DelayedIntersection> {
         // This an adaption of the code from the paper
         // "An Efficient and Robust Ray–Box Intersection Algorithm" by Williams et. al.
         // http://www.cs.utah.edu/~awilliam/box/
@@ -230,6 +230,7 @@ impl Aabb {
         } else { // The part from EPS to t1 of the ray is completely inside the box:
             return None
         };
-        Some(Intersection::new(r, t, normal.assert_unit_vector(), bounding_box_material()))
+        let inter = Intersection::new(r, t, normal.assert_unit_vector(), bounding_box_material());
+        Some(DelayedIntersection::new(t, move || inter))
     }
 }
