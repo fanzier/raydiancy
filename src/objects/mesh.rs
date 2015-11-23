@@ -34,7 +34,7 @@ impl Mesh {
     }
 
     /// Builds a mesh from the OBJ file `path` and out of the given `material`.
-    pub fn from_obj_file(path: &str, material: Material) -> io::Result<BVH<Mesh>> {
+    pub fn from_obj_file(path: &str, material: Material) -> io::Result<Bvh<Mesh>> {
         let mut vertices: Vec<Vec3> = vec![];
         let mut normals: Vec<Vec3> = vec![];
         let mut faces: Vec<Face> = vec![];
@@ -66,7 +66,7 @@ impl Mesh {
                 _ => continue
             }
         }
-        Ok(BVH::new(Mesh {
+        Ok(Bvh::new(Mesh {
             vertices: vertices,
             faces: faces,
             material: material,

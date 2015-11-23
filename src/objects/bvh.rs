@@ -10,30 +10,30 @@ const COUNT_THRESHOLD: usize = 5;
 const DEBUG_BVH: bool = false;
 
 /// Represents a bounding volume hierarchy.
-pub struct BVH<ContainerType: SurfaceContainer> {
+pub struct Bvh<ContainerType: SurfaceContainer> {
     unbounded_objects: Vec<usize>, // TODO: Intersect those, too.
     container: ContainerType,
-    root_node: BVHNode,
+    root_node: BvhNode,
 }
 
-struct BVHNode {
+struct BvhNode {
     pub bounding_box: Aabb,
-    pub node: Box<BVHTreeNode>,
+    pub node: Box<BvhTreeNode>,
 }
 
-enum BVHTreeNode {
+enum BvhTreeNode {
     pub Leaf {
         objects: Vec<usize>,
     },
     pub Branch {
-        left: BVHNode,
-        right: BVHNode,
+        left: BvhNode,
+        right: BvhNode,
     }
 }
 
-impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
+impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
     /// Creates a BVH from a container.
-    pub fn new(container: ContainerType) -> BVH<ContainerType> {
+    pub fn new(container: ContainerType) -> Bvh<ContainerType> {
         let mut unbounded_objects = vec![];
         let mut aabbs = vec![];
         for i in (0..container.count()) {
@@ -43,30 +43,30 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
                 Some(aabb) => aabbs.push((i,aabb)),
             }
         }
-        let root_node = BVHNode::new(&container, aabbs, MAX_DEPTH);
-        BVH {
+        let root_node = BvhNode::new(&container, aabbs, MAX_DEPTH);
+        Bvh {
             unbounded_objects: unbounded_objects,
             container: container,
             root_node: root_node,
         }
     }
 
-    fn node_is_hit_by(&self, node: &BVHNode, ray: Ray, t_max: f64) -> bool {
+    fn node_is_hit_by(&self, node: &BvhNode, ray: Ray, t_max: f64) -> bool {
         if !node.bounding_box.passes_through(ray, t_max) {
             return false
         }
         match *node.node {
-            BVHTreeNode::Leaf { ref objects } => {
+            BvhTreeNode::Leaf { ref objects } => {
                 objects.iter().any(|&i| self.container.elem_is_hit_by(i, ray, t_max))
             },
-            BVHTreeNode::Branch { ref left, ref right} => {
+            BvhTreeNode::Branch { ref left, ref right} => {
                 // TODO: Optimize: Check nearest node first and use t value for cutoff
                 self.node_is_hit_by(left, ray, t_max) && self.node_is_hit_by(right, ray, t_max)
             },
         }
     }
 
-    fn node_intersect<'a, 'b: 'a>(&'a self, node: &'b BVHNode, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn node_intersect<'a, 'b: 'a>(&'a self, node: &'b BvhNode, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
         if !node.bounding_box.passes_through(ray, t_max) {
             return None
         }
@@ -80,7 +80,7 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
             (t_max, None)
         };
         match *node.node {
-            BVHTreeNode::Leaf { ref objects } => {
+            BvhTreeNode::Leaf { ref objects } => {
                 let mut nearest_t = t_max;
                 let mut nearest_inter = no_intersection;
                 for &i in objects {
@@ -94,7 +94,7 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
                 }
                 return nearest_inter
             },
-            BVHTreeNode::Branch { ref left, ref right} => {
+            BvhTreeNode::Branch { ref left, ref right} => {
                 let (near, far) =
                     if left.bounding_box.distance(ray, t_max) < right.bounding_box.distance(ray, t_max) {
                         (left, right)
@@ -113,7 +113,7 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
     }
 }
 
-impl<ContainerType> Surface for BVH<ContainerType> where ContainerType: SurfaceContainer {
+impl<ContainerType> Surface for Bvh<ContainerType> where ContainerType: SurfaceContainer {
     fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
         self.node_is_hit_by(&self.root_node, ray, t_max)
     }
@@ -131,14 +131,14 @@ impl<ContainerType> Surface for BVH<ContainerType> where ContainerType: SurfaceC
     }
 }
 
-impl BVHNode {
+impl BvhNode {
     /// Creates a bounding volume hierarchy node,
     /// given a list of object indices with their bounding boxes.
     /// The node will recursively split until a depth of `max_depth`.
-    pub fn new<ContainerType>(container: &ContainerType, aabbs: Vec<(usize, Aabb)>, max_depth: usize) -> BVHNode {
+    pub fn new<ContainerType>(container: &ContainerType, aabbs: Vec<(usize, Aabb)>, max_depth: usize) -> BvhNode {
         let aabb = Aabb::union_all(&mut aabbs.iter().map(|&(_,b)| b));
         let tree_node = if aabbs.len() < COUNT_THRESHOLD || max_depth <= 0 {
-            Box::new(BVHTreeNode::Leaf {
+            Box::new(BvhTreeNode::Leaf {
                 objects: aabbs.iter().map(|x| x.0).collect(),
             })
         } else {
@@ -156,31 +156,14 @@ impl BVHNode {
                     right_objects.push((i, bb));
                 }
             }
-            Box::new(BVHTreeNode::Branch {
-                left: BVHNode::new(container, left_objects, max_depth - 1),
-                right: BVHNode::new(container, right_objects, max_depth - 1),
+            Box::new(BvhTreeNode::Branch {
+                left: BvhNode::new(container, left_objects, max_depth - 1),
+                right: BvhNode::new(container, right_objects, max_depth - 1),
             })
         };
-        BVHNode {
+        BvhNode {
             bounding_box: aabb,
             node: tree_node,
         }
     }
-}
-
-/// Represents a container type which contains `Surfaces`s, for example a triangle mesh.
-pub trait SurfaceContainer {
-    /// Returns information about the intersection of the object and the ray, if one exists.
-    /// If the distance is greater that `t_max`, it returns `None`.
-    fn elem_intersect(&self, idx: usize, ray: Ray, t_max: f64) -> Option<DelayedIntersection>;
-
-    /// Checks whether the ray intersects the object, computes no additional information.
-    /// If the distance is greater than `t_max`, it returns `false`.
-    fn elem_is_hit_by(&self, idx: usize, ray: Ray, t_max: f64) -> bool;
-
-    /// Returns a finite (!) axis-aligned bounding box if one exists.
-    fn elem_bounding_box(&self, idx: usize) -> Option<Aabb>;
-
-    /// Returns the number of objects in the container.
-    fn count(&self) -> usize;
 }
