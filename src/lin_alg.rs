@@ -7,7 +7,7 @@ pub use std::f64::consts::PI;
 /// This should account for numerical instabilities.
 pub const EPS: f64 = 0.0001;
 
-/// Compares two f64 values for approximate value (up to `EPS`)
+/// Tests two f64 values for approximate equality (up to `EPS`)
 ///
 /// This is done to account for rounding errors.
 /// # Examples
@@ -18,6 +18,27 @@ pub const EPS: f64 = 0.0001;
 /// ```
 pub fn appr(f: f64, g: f64) -> bool {
     if (f - g).abs() < EPS { true } else { false }
+}
+
+/// Compares two f64 values for approximate value (up to `EPS`)
+///
+/// This is done to account for rounding errors.
+/// # Examples
+/// ```
+/// use raydiancy::lin_alg::*;
+/// use std::cmp;
+/// assert_eq!(appr_cmp(0.0, EPS / 2.0), cmp::Ordering::Equal);
+/// assert_eq!(appr_cmp(0.0,1.0), cmp::Ordering::Less);
+/// ```
+pub fn appr_cmp(f: f64, g: f64) -> cmp::Ordering {
+    let diff = f - g;
+    if diff < -EPS {
+        cmp::Ordering::Less
+    } else if diff > EPS {
+        cmp::Ordering::Greater
+    } else {
+        cmp::Ordering::Equal
+    }
 }
 
 /// Represents a three-dimensional vector with a type marker `Marker`.
@@ -118,6 +139,9 @@ impl<M> ops::Index<usize> for Vec3M<M> where M: Clone {
     }
 }
 
+/// Compares vectors up to `EPS` (to take rounding errors into account).
+/// Note that this relation is *not transitive*.
+/// But it is still very useful because this property is often not needed.
 impl<M,N> cmp::PartialEq<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     fn eq(&self, v: &Vec3M<N>) -> bool {
         for i in 0..3 {
@@ -126,6 +150,24 @@ impl<M,N> cmp::PartialEq<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
             }
         }
         true
+    }
+}
+
+/// Orders vectors up to `EPS` (to take rounding errors into account).
+/// Note that this relation is *not transitive*.
+/// But it is still very useful because this property is often not needed.
+impl<M, N> cmp::PartialOrd<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+    fn partial_cmp(&self, v: &Vec3M<N>) -> Option<cmp::Ordering> {
+        let cmps = [appr_cmp(self[0], v[0]), appr_cmp(self[1], v[1]), appr_cmp(self[2], v[2])];
+        if cmps.iter().all(|&x| x == cmp::Ordering::Equal) {
+            Some(cmp::Ordering::Equal)
+        } else if cmps.iter().all(|&x| x != cmp::Ordering::Greater) {
+            Some(cmp::Ordering::Less)
+        } else if cmps.iter().all(|&x| x != cmp::Ordering::Less) {
+            Some(cmp::Ordering::Greater)
+        } else {
+            None
+        }
     }
 }
 

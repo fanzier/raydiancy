@@ -1,10 +1,17 @@
-use std::f64;
 use basic::*;
 use objects::surface::*;
 
+/// The maximum depth for a bounding volume hierarchy.
+const MAX_DEPTH: usize = 15;
+/// The maximum number of objects in a BVH node.
+/// Above this threshold, the node will be split if the depth limit allows it.
+const COUNT_THRESHOLD: usize = 5;
+/// If `true`, makes the BVH boxes visible (transparent red).
+const DEBUG_BVH: bool = false;
+
 /// Represents a bounding volume hierarchy.
 pub struct BVH<ContainerType: SurfaceContainer> {
-    unbounded_objects: Vec<usize>,
+    unbounded_objects: Vec<usize>, // TODO: Intersect those, too.
     container: ContainerType,
     root_node: BVHNode,
 }
@@ -25,6 +32,7 @@ enum BVHTreeNode {
 }
 
 impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
+    /// Creates a BVH from a container.
     pub fn new(container: ContainerType) -> BVH<ContainerType> {
         let mut unbounded_objects = vec![];
         let mut aabbs = vec![];
@@ -35,7 +43,7 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
                 Some(aabb) => aabbs.push((i,aabb)),
             }
         }
-        let root_node = BVHNode::new(&container, aabbs);
+        let root_node = BVHNode::new(&container, aabbs, MAX_DEPTH);
         BVH {
             unbounded_objects: unbounded_objects,
             container: container,
@@ -52,7 +60,8 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
                 objects.iter().any(|&i| self.container.elem_is_hit_by(i, ray, t_max))
             },
             BVHTreeNode::Branch { ref left, ref right} => {
-                unimplemented!();
+                // TODO: Optimize: Check nearest node first and use t value for cutoff
+                self.node_is_hit_by(left, ray, t_max) && self.node_is_hit_by(right, ray, t_max)
             },
         }
     }
@@ -61,15 +70,21 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
         if !node.bounding_box.passes_through(ray, t_max) {
             return None
         }
+        let (t_max, no_intersection) = if DEBUG_BVH {
+            let i = node.bounding_box.intersect(ray, t_max);
+            match i {
+                Some(i) => (i.t, Some(i)),
+                None => (t_max, None),
+            }
+        } else {
+            (t_max, None)
+        };
         match *node.node {
             BVHTreeNode::Leaf { ref objects } => {
-                let mut nearest_inter = node.bounding_box.intersect(ray, t_max);
-                let mut nearest_t = match &nearest_inter {
-                    &Some(ref inter) => inter.t,
-                    &None => f64::INFINITY
-                };
+                let mut nearest_t = t_max;
+                let mut nearest_inter = no_intersection;
                 for &i in objects {
-                    match self.container.elem_intersect(i, ray, t_max) {
+                    match self.container.elem_intersect(i, ray, nearest_t) {
                         None => continue,
                         Some(inter) => if inter.t < nearest_t {
                             nearest_t = inter.t;
@@ -80,7 +95,19 @@ impl<ContainerType> BVH<ContainerType> where ContainerType: SurfaceContainer {
                 return nearest_inter
             },
             BVHTreeNode::Branch { ref left, ref right} => {
-                unimplemented!();
+                let (near, far) =
+                    if left.bounding_box.distance(ray, t_max) < right.bounding_box.distance(ray, t_max) {
+                        (left, right)
+                    } else {
+                        (right, left)
+                    };
+                match self.node_intersect(near, ray, t_max) {
+                    None => self.node_intersect(far, ray, t_max).or(no_intersection),
+                    Some(near_inter) => match self.node_intersect(far, ray, near_inter.t) {
+                        None => Some(near_inter),
+                        Some(far_inter) => Some(far_inter)
+                    }
+                }
             },
         }
     }
@@ -105,21 +132,43 @@ impl<ContainerType> Surface for BVH<ContainerType> where ContainerType: SurfaceC
 }
 
 impl BVHNode {
-    pub fn new<ContainerType>(container: &ContainerType, aabbs: Vec<(usize, Aabb)>) -> BVHNode {
-        let ref mut iter = aabbs.iter();
-        let start = iter.next().unwrap().1;
-        let aabb = iter.fold(start, |acc, &(_, ref aabb)| {
-            acc.union(aabb)
-        });
+    /// Creates a bounding volume hierarchy node,
+    /// given a list of object indices with their bounding boxes.
+    /// The node will recursively split until a depth of `max_depth`.
+    pub fn new<ContainerType>(container: &ContainerType, aabbs: Vec<(usize, Aabb)>, max_depth: usize) -> BVHNode {
+        let aabb = Aabb::union_all(&mut aabbs.iter().map(|&(_,b)| b));
+        let tree_node = if aabbs.len() < COUNT_THRESHOLD || max_depth <= 0 {
+            Box::new(BVHTreeNode::Leaf {
+                objects: aabbs.iter().map(|x| x.0).collect(),
+            })
+        } else {
+            let max = aabb.longest_side();
+            let half = 0.5 * max.1 * Vec3::e(max.0);
+            let left_half = Aabb::new(aabb.min(), aabb.max() - half);
+            let right_half = Aabb::new(aabb.min() + half, aabb.max());
+            let mut left_objects = vec![];
+            let mut right_objects = vec![];
+            for (i, bb) in aabbs {
+                if !right_half.contains(&bb) {
+                    left_objects.push((i, bb));
+                }
+                if !left_half.contains(&bb) {
+                    right_objects.push((i, bb));
+                }
+            }
+            Box::new(BVHTreeNode::Branch {
+                left: BVHNode::new(container, left_objects, max_depth - 1),
+                right: BVHNode::new(container, right_objects, max_depth - 1),
+            })
+        };
         BVHNode {
             bounding_box: aabb,
-            node: Box::new(BVHTreeNode::Leaf {
-                objects: aabbs.iter().map(|x| x.0).collect(),
-            }),
+            node: tree_node,
         }
     }
 }
 
+/// Represents a container type which contains `Surfaces`s, for example a triangle mesh.
 pub trait SurfaceContainer {
     /// Returns information about the intersection of the object and the ray, if one exists.
     /// If the distance is greater that `t_max`, it returns `None`.
