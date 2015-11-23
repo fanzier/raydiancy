@@ -7,9 +7,18 @@ use std::fs;
 macro_rules! render {
     ($scene:ident) => { {
         let _ = fs::create_dir("output/");
+        let name = stringify!($scene);
+        println!("Scene: {}", name);
+        println!("  Constructing ...");
+        let scene = $scene();
+        println!("  Rendering ...");
+        let rendered = scene.render();
+        let file = format!("output/{}.png", name);
+        println!("  Writing to file {}...", file);
         write_pixels_to_file(
-            $scene().render(),
-            Path::new(&format!("output/{}.png", stringify!($scene))));
+            rendered,
+            Path::new(&file),
+        );
     } }
 }
 
@@ -20,8 +29,8 @@ fn main() {
 }
 
 fn bunny() -> Scene {
-    let width = 64;
-    let height = 36;
+    let width = 640;
+    let height = 360;
     let material = color_material(white());
     let camera = Camera {
         pos: Vec3::new(0.0, 4.0, 12.0),
@@ -48,8 +57,8 @@ fn bunny() -> Scene {
 }
 
 fn dragon() -> Scene {
-    let width = 64;
-    let height = 36;
+    let width = 640;
+    let height = 360;
     let material = color_material(white());
     let camera = Camera {
         pos: Vec3::new(0.0, 4.0, 12.0),
@@ -93,12 +102,12 @@ fn spheres() -> Scene {
     let wall1 = Plane {
         normal: Vec3::e3(),
         offset: -5.0,
-        material: reflective_material(0.9, white()),
+        material: reflective_material(0.9, black()),
     };
     let wall2 = Plane {
         normal: Vec3::e1(),
-        offset: -5.0,
-        material: reflective_material(0.9, white()),
+        offset: -10.0,
+        material: reflective_material(0.9, black()),
     };
     let floor = Plane {
         normal: Vec3::e2(),
