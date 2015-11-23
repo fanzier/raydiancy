@@ -223,14 +223,13 @@ impl Aabb {
         if tmax < EPS || tmin > t1 {
             return None
         }
-        let (i,t) = if tmin > EPS {
-            (imin, tmin)
+        let (normal,t) = if tmin > EPS {
+            (-Vec3::e(imin), tmin)
         } else if tmax < t1 {
-            (imax, tmax)
+            (Vec3::e(imax), tmax)
         } else { // The part from EPS to t1 of the ray is completely inside the box:
             return None
         };
-        let normal = Vec3::e(i);
         Some(Intersection::new(r, t, normal.assert_unit_vector(), bounding_box_material()))
     }
 }
