@@ -31,9 +31,36 @@ macro_rules! render {
 }
 
 fn main() {
+    render!(single_sphere);
     render!(bunny);
     render!(dragon);
     render!(spheres);
+}
+
+fn single_sphere() -> Scene {
+    Scene {
+        camera: Camera {
+            pos: Vec3::new(10.0, 10.0, 10.0),
+            look_at: Vec3::zero(),
+            up: Vec3::new(0.0, 1.0, 0.0),
+            horizontal_fov: 120_f64.to_radians(),
+            aspect_ratio: 1.0,
+            width: 360,
+            height: 360
+        },
+        objects: vec![Box::new(
+            Sphere {
+                center: Vec3::zero(),
+                radius: 8.0,
+                material: color_material(Color::new(0.0, 0.0, 1.0))
+        })],
+        ambient_color: white(),
+        lights: vec![
+            LightSource {
+                pos: Vec3::new(0.0, 10.0, 10.0),
+                col: white()
+        }]
+    }
 }
 
 fn bunny() -> Scene {
