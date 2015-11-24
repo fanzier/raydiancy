@@ -9,7 +9,7 @@ pub struct Sphere {
 }
 
 impl Surface for Sphere {
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         let x = ray.origin - self.center;
         let b = 2.0 * x * ray.dir;
         let c = x.norm2() - self.radius*self.radius;
@@ -27,7 +27,7 @@ impl Surface for Sphere {
         }))
     }
 
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         let x = ray.origin - self.center;
         let b = 2.0 * x * ray.dir;
         let c = x.norm2() - self.radius*self.radius;

@@ -15,7 +15,7 @@ pub struct Triangle {
 
 impl Surface for Triangle {
     /// Intersects a ray with a triangle.
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         intersect_triangle(self.a, self.b, self.c, ray, t_max).map(|(e,f,_,_,t)| {
             DelayedIntersection::new(t, move || {
                 let normal = e.cross(f).normalize();
@@ -28,7 +28,7 @@ impl Surface for Triangle {
     }
 
     /// Checks whether the ray hits the triangle.
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         is_triangle_hit_by(self.a, self.b, self.c, ray, t_max)
     }
 
@@ -41,7 +41,7 @@ impl Surface for Triangle {
 
 #[inline(always)]
 #[doc(hidden)]
-pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray, t_max: f64) -> Option<(Vec3,Vec3,f64,f64,f64)> {
+pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: &Ray, t_max: f64) -> Option<(Vec3,Vec3,f64,f64,f64)> {
     let d = ray.dir;
     let e = b - a;
     let f = c - a;
@@ -70,7 +70,7 @@ pub fn intersect_triangle(a: Vec3, b: Vec3, c: Vec3, ray: Ray, t_max: f64) -> Op
 
 #[inline(always)]
 #[doc(hidden)]
-pub fn is_triangle_hit_by(a: Vec3, b: Vec3, c: Vec3, ray: Ray, t_max: f64) -> bool {
+pub fn is_triangle_hit_by(a: Vec3, b: Vec3, c: Vec3, ray: &Ray, t_max: f64) -> bool {
     let d = ray.dir;
     let e = b - a;
     let f = c - a;

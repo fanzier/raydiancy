@@ -12,7 +12,7 @@ pub struct Plane {
 }
 
 impl Surface for Plane {
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         let nd = self.normal * ray.dir;
         if f64::abs(nd) < EPS {
             return None
@@ -29,7 +29,7 @@ impl Surface for Plane {
         }))
     }
 
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         let nd = self.normal * ray.dir;
         if f64::abs(nd) < EPS {
             return false

@@ -51,7 +51,7 @@ impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
         }
     }
 
-    fn node_is_hit_by(&self, node: &BvhNode, ray: Ray, t_max: f64) -> bool {
+    fn node_is_hit_by(&self, node: &BvhNode, ray: &Ray, t_max: f64) -> bool {
         if !node.bounding_box.passes_through(ray, t_max) {
             return false
         }
@@ -66,7 +66,7 @@ impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
         }
     }
 
-    fn node_intersect<'a, 'b: 'a>(&'a self, node: &'b BvhNode, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn node_intersect<'a>(&'a self, node: &'a BvhNode, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         if !node.bounding_box.passes_through(ray, t_max) {
             return None
         }
@@ -114,11 +114,11 @@ impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
 }
 
 impl<ContainerType> Surface for Bvh<ContainerType> where ContainerType: SurfaceContainer {
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         self.node_is_hit_by(&self.root_node, ray, t_max)
     }
 
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         self.node_intersect(&self.root_node, ray, t_max)
     }
 

@@ -10,11 +10,11 @@ pub use objects::aabb::*;
 pub trait Surface {
     /// Returns information about the intersection of the object and the ray, if one exists.
     /// If the distance is greater that `t_max`, it returns `None`.
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection>;
+    fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection<'a>>;
 
     /// Checks whether the ray intersects the object, computes no additional information.
     /// If the distance is greater than `t_max`, it returns `false`.
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool;
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool;
 
     /// Returns a finite (!) axis-aligned bounding box if one exists.
     fn bounding_box(&self) -> Option<Aabb>;
@@ -24,11 +24,11 @@ pub trait Surface {
 pub trait SurfaceContainer {
     /// Returns information about the intersection of the object and the ray, if one exists.
     /// If the distance is greater that `t_max`, it returns `None`.
-    fn elem_intersect(&self, idx: usize, ray: Ray, t_max: f64) -> Option<DelayedIntersection>;
+    fn elem_intersect<'a>(&'a self, idx: usize, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection<'a>>;
 
     /// Checks whether the ray intersects the object, computes no additional information.
     /// If the distance is greater than `t_max`, it returns `false`.
-    fn elem_is_hit_by(&self, idx: usize, ray: Ray, t_max: f64) -> bool;
+    fn elem_is_hit_by(&self, idx: usize, ray: &Ray, t_max: f64) -> bool;
 
     /// Returns a finite (!) axis-aligned bounding box if one exists.
     fn elem_bounding_box(&self, idx: usize) -> Option<Aabb>;

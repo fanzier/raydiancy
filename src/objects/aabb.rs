@@ -103,7 +103,7 @@ impl Aabb {
     ///
     /// In contrast to is_hit_by, this also returns true
     /// if this part of the ray is completely inside the box.
-    pub fn passes_through(&self, r: Ray, t1: f64) -> bool {
+    pub fn passes_through(&self, r: &Ray, t1: f64) -> bool {
         // This an adaption of the code from the paper
         // "An Efficient and Robust Ray–Box Intersection Algorithm" by Williams et. al.
         // http://www.cs.utah.edu/~awilliam/box/
@@ -139,7 +139,7 @@ impl Aabb {
 
     /// Computes the distance of the nearest intersection point if its less than `t1`,
     /// and `f64::INFINITY` otherwise.
-    pub fn distance(&self, r: Ray, t1: f64) -> f64 {
+    pub fn distance(&self, r: &Ray, t1: f64) -> f64 {
         // This an adaption of the code from the paper
         // "An Efficient and Robust Ray–Box Intersection Algorithm" by Williams et. al.
         // http://www.cs.utah.edu/~awilliam/box/
@@ -183,7 +183,7 @@ impl Aabb {
 
     /// Computes the intersection with this bounding box.
     /// This is supposed to be used for debugging only.
-    pub fn intersect(&self, r: Ray, t1: f64) -> Option<DelayedIntersection> {
+    pub fn intersect(&self, r: &Ray, t1: f64) -> Option<DelayedIntersection> {
         // This an adaption of the code from the paper
         // "An Efficient and Robust Ray–Box Intersection Algorithm" by Williams et. al.
         // http://www.cs.utah.edu/~awilliam/box/

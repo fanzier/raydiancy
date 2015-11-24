@@ -4,7 +4,7 @@ pub use material::*;
 use physics::*;
 
 /// Structure for representing rays
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ray {
     /// Where the ray comes from.
     pub origin: Vec3,
@@ -66,7 +66,7 @@ impl Intersection {
     /// `t` is the distance of the intersection point from `ray.origin`,
     /// `normal` is the normal vector at the intersection point,
     /// `material` is the material at the intersection point.
-    pub fn new(ray: Ray, t: f64, normal: UnitVec3, material: Material) -> Intersection {
+    pub fn new(ray: &Ray, t: f64, normal: UnitVec3, material: Material) -> Intersection {
         Intersection {
             t: t,
             point: ray.origin + t * ray.dir,

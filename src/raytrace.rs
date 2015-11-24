@@ -59,13 +59,13 @@ impl Scene {
             let (x,y) = ((left as f64 / w) - 0.5, 0.5 - (down as f64 / h));
             let ray_dir = camera_dir + x * right + y * up;
             let ray = Ray::newn(self.camera.pos, ray_dir);
-            *col = self.trace_ray(ray, 1.0, 0, f64::INFINITY);
+            *col = self.trace_ray(&ray, 1.0, 0, f64::INFINITY);
         }
         return img;
     }
 
     /// Traces the ray through the scene and returns its color.
-    fn trace_ray(&self, ray: Ray, intensity: f64, depth: usize, t_max: f64) -> AColor {
+    fn trace_ray(&self, ray: &Ray, intensity: f64, depth: usize, t_max: f64) -> AColor {
         let mut nearest: Option<DelayedIntersection> = None;
         let mut nearest_t: f64 = t_max;
         for obj in self.objects.iter() {
@@ -80,7 +80,7 @@ impl Scene {
         }
     }
 
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         for obj in self.objects.iter() {
             if obj.is_hit_by(ray, t_max) { return true }
         }
@@ -88,7 +88,7 @@ impl Scene {
     }
 
     /// Determines the color of an intersection point.
-    fn shade(&self, ray: Ray, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
+    fn shade(&self, ray: &Ray, inter: &Intersection, intensity: f64, depth: usize) -> AColor {
         self.compute_illuminance(ray.dir, inter)
         + self.compute_reflection_refraction(ray.dir, inter, intensity, depth)
     }
@@ -108,7 +108,7 @@ impl Scene {
             let light_dir = light_vec.normalize();
             let shadow_ray = shadow_ray(inter, light_dir);
             // Check if the point is in the shadow of the current light source.
-            if self.is_hit_by(shadow_ray, t_max) {
+            if self.is_hit_by(&shadow_ray, t_max) {
                 continue // the point is in the shadow of this light source
             }
             // Compute the diffuse reflection:
@@ -132,7 +132,7 @@ impl Scene {
         if mat.reflectance > 0. && mat.reflectance * intensity > INTENSITY_THRESHOLD && depth < MAX_DEPTH {
             let reflected_ray = reflect_ray(inter, dir);
             let reflected_intensity = mat.reflectance * intensity;
-            color = color + self.trace_ray(reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
+            color = color + self.trace_ray(&reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
         }
 
         // Compute the REFRACTION:
@@ -161,15 +161,15 @@ impl Scene {
         match refracted_ray {
             None => { // Total internal reflection:
                 let reflected_intensity = intensity * mat.refractivity;
-                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
+                let reflected = self.trace_ray(&reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
                 return reflected_intensity * reflected
             },
             Some(refracted_ray) => { // Both reflection and refraction:
                 let fresnel_factor = fresnel(dir, normal, ior);
                 let refracted_intensity = intensity * mat.refractivity * (1. - fresnel_factor);
                 let reflected_intensity = intensity * mat.refractivity * fresnel_factor;
-                let reflected = self.trace_ray(reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
-                let refracted = self.trace_ray(refracted_ray, refracted_intensity, depth + 1, f64::INFINITY);
+                let reflected = self.trace_ray(&reflected_ray, reflected_intensity, depth + 1, f64::INFINITY);
+                let refracted = self.trace_ray(&refracted_ray, refracted_intensity, depth + 1, f64::INFINITY);
                 return refracted_intensity * refracted + reflected_intensity * reflected
             }
         }

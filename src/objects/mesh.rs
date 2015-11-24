@@ -96,7 +96,7 @@ impl Mesh {
 }
 
 impl Surface for Mesh {
-    fn intersect(&self, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         let mut t_min = t_max;
         let mut nearest_face = None;
         for face in self.faces.iter() {
@@ -122,7 +122,7 @@ impl Surface for Mesh {
         })
     }
 
-    fn is_hit_by(&self, ray: Ray, t_max: f64) -> bool {
+    fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         for face in self.faces.iter() {
             let vertices = self.face_vertices(face);
             let a = *vertices[0];
@@ -153,12 +153,12 @@ impl Surface for Mesh {
 }
 
 impl SurfaceContainer for Mesh {
-    fn elem_is_hit_by(&self, i: usize, ray: Ray, t_max: f64) -> bool {
+    fn elem_is_hit_by(&self, i: usize, ray: &Ray, t_max: f64) -> bool {
         let vertices = self.face_vertices(&self.faces[i]);
         return is_triangle_hit_by(*vertices[0], *vertices[1], *vertices[2], ray, t_max)
     }
 
-    fn elem_intersect(&self, i: usize, ray: Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn elem_intersect<'a>(&'a self, i: usize, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         let ref face = self.faces[i];
         let vertices = self.face_vertices(face);
         let a = *vertices[0];
