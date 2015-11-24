@@ -1,18 +1,26 @@
 extern crate raydiancy;
+extern crate time;
 
 use raydiancy::raytrace::*;
-use std::path::Path;
-use std::fs;
 
 macro_rules! render {
     ($scene:ident) => { {
+        use std::path::Path;
+        use std::fs;
+        use std::io::*;
+        use time::*;
+
         let _ = fs::create_dir("output/");
         let name = stringify!($scene);
         println!("Scene: {}", name);
         println!("  Constructing ...");
         let scene = $scene();
-        println!("  Rendering ...");
+        let start_time = precise_time_s();
+        print!("  Rendering ... ");
+        stdout().flush().unwrap();
         let rendered = scene.render();
+        let end_time = precise_time_s();
+        println!("({:.2} seconds)", end_time - start_time);
         let file = format!("output/{}.png", name);
         println!("  Writing to file {}...", file);
         write_pixels_to_file(
