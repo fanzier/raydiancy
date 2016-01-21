@@ -91,7 +91,7 @@ You can add your own ones as follows.
 
     to the main function.
 3.  Build and run the program as described above.
-4.  The result is in `output/single_sphere.png`:
+4.  The result is in `output/my_scene.png`:
 
     ![Rendered image for the above example](output/single_sphere.png)
 
