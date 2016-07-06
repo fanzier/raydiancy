@@ -4,9 +4,12 @@ pub use physics::*;
 pub use objects::*;
 use std::f64;
 
+extern crate simple_parallel;
+
 // TODO: Move these constants in a struct `RenderOptions`.
 const INTENSITY_THRESHOLD: f64 = 1. / 256.;
 const MAX_DEPTH: usize = 10;
+const NUM_THREADS: usize = 8;
 
 /// Contains information about camera, like position, direction etc.
 pub struct Camera {
@@ -37,11 +40,22 @@ pub struct Scene {
     /// The camera in the scene.
     pub camera: Camera,
     /// The objects in the scene.
-    pub objects: Vec<Box<Surface>>,
+    pub objects: Vec<Box<Surface + Sync>>,
     /// The lights in the scene.
     pub lights: Vec<LightSource>,
     /// The color of ambient light in the scene.
     pub ambient_color: Color,
+}
+
+// Parallelize rendering using the simple_parallel library.
+// TODO: Do this properly by chunking the image.
+fn render_parallel<Iter, F>(num_threads: usize, iter: Iter, f: F)
+    where Iter: IntoIterator + Send,
+          Iter::Item: Send,
+          F: Fn(Iter::Item) + Sync
+{
+    let mut pool = simple_parallel::pool::Pool::new(num_threads);
+    pool.for_(iter, f);
 }
 
 impl Scene {
@@ -55,12 +69,12 @@ impl Scene {
         let up = horizontal / self.camera.aspect_ratio * up;
 
         let mut img = Image::new(self.camera.width, self.camera.height);
-        for (left, down, col) in img.iter_mut() {
+        render_parallel(NUM_THREADS, img.iter_mut(), |(left, down, col)| {
             let (x, y) = ((left as f64 / w) - 0.5, 0.5 - (down as f64 / h));
             let ray_dir = camera_dir + x * right + y * up;
             let ray = Ray::newn(self.camera.pos, ray_dir);
             *col = self.trace_ray(&ray, 1.0, 0, f64::INFINITY);
-        }
+        });
         return img;
     }
 

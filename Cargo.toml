@@ -6,3 +6,4 @@ authors = ["Fabian Zaiser <fabianzaiser@gmail.com>"]
 [dependencies]
 image = "*"
 time = "*"
+simple_parallel = "*"

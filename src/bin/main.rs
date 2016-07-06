@@ -150,7 +150,7 @@ fn spheres() -> Scene {
     let big_radius = 3.;
     let small_radius = 1.;
     let num_spheres = 8;
-    let mut objects: Vec<Box<Surface>> = (0..num_spheres)
+    let mut objects: Vec<_> = (0..num_spheres)
         .map(|i| {
             let angle = (2 * i) as f64 * PI / (num_spheres as f64);
             Box::new(Sphere {
@@ -160,7 +160,7 @@ fn spheres() -> Scene {
                 material: color_material(Color::new((angle / 2.).sin(),
                                                     (angle / 2. + PI / 3.).sin().abs(),
                                                     (angle / 2. + PI / 1.5).sin().abs())),
-            }) as Box<Surface>
+            }) as Box<Surface + Sync>
         })
         .collect();
     objects.push(Box::new(Sphere {

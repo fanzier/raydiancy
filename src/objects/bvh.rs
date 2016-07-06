@@ -38,7 +38,7 @@ impl<ContainerType> Bvh<ContainerType>
     pub fn new(container: ContainerType) -> Bvh<ContainerType> {
         let mut unbounded_objects = vec![];
         let mut aabbs = vec![];
-        for i in (0..container.count()) {
+        for i in 0..container.count() {
             let aabb = container.elem_bounding_box(i);
             match aabb {
                 None => unbounded_objects.push(i),
