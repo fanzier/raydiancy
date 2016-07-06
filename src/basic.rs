@@ -15,7 +15,10 @@ pub struct Ray {
 impl Ray {
     /// Creates a `Ray`.
     pub fn new(origin: Vec3, dir: UnitVec3) -> Ray {
-        Ray { origin: origin, dir: dir }
+        Ray {
+            origin: origin,
+            dir: dir,
+        }
     }
 
     /// Creates a `Ray` and normalizes the given direction.
@@ -56,7 +59,7 @@ pub struct Intersection {
     /// The normal vector at the intersection point (orthogonal to the surface).
     pub normal: UnitVec3,
     /// The material properties at the intersection point.
-    pub material: Material
+    pub material: Material,
 }
 
 impl Intersection {
@@ -71,7 +74,7 @@ impl Intersection {
             t: t,
             point: ray.origin + t * ray.dir,
             normal: normal,
-            material: material
+            material: material,
         }
     }
 }

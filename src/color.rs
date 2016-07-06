@@ -52,11 +52,7 @@ impl ops::Add for Color {
     type Output = Color;
 
     fn add(self, c: Color) -> Color {
-        Color::new(
-            self.r + c.r,
-            self.g + c.g,
-            self.b + c.b,
-        )
+        Color::new(self.r + c.r, self.g + c.g, self.b + c.b)
     }
 }
 
@@ -64,11 +60,7 @@ impl ops::Mul<Color> for f64 {
     type Output = Color;
 
     fn mul(self, c: Color) -> Color {
-        Color::new(
-            self * c.r,
-            self * c.g,
-            self * c.b,
-        )
+        Color::new(self * c.r, self * c.g, self * c.b)
     }
 }
 
@@ -76,11 +68,7 @@ impl ops::Mul<Color> for Color {
     type Output = Color;
 
     fn mul(self, c: Color) -> Color {
-        Color::new(
-            self.r * c.r,
-            self.g * c.g,
-            self.b * c.b,
-        )
+        Color::new(self.r * c.r, self.g * c.g, self.b * c.b)
     }
 }
 
@@ -110,7 +98,10 @@ impl AColor {
 
     fn newa(r: f64, g: f64, b: f64, a: f64) -> AColor {
         assert!(r + a <= 1.0 && g + a <= 1.0 && b + a <= 1.0);
-        AColor { c: Color::new(r, g, b), a: a }
+        AColor {
+            c: Color::new(r, g, b),
+            a: a,
+        }
     }
 
     /// Returns the opaque part of the color.
@@ -129,16 +120,15 @@ impl AColor {
     }
 
     /// Converts the color to RGBA.
-    pub fn to_rgba(&self) -> (u8,u8,u8,u8) {
+    pub fn to_rgba(&self) -> (u8, u8, u8, u8) {
         if self.a == 1. {
-            return (0,0,0,0)
+            return (0, 0, 0, 0);
         }
         let c = (1. - self.a) * self.c;
         (to_u8(gamma_correct(c.r)),
          to_u8(gamma_correct(c.g)),
          to_u8(gamma_correct(c.b)),
-         0xff - to_u8(self.a),
-        )
+         0xff - to_u8(self.a))
     }
 }
 
@@ -172,5 +162,5 @@ fn to_u8(x: f64) -> u8 {
 
 /// Applies standard gamma correction (2.2) to the AColor.
 fn gamma_correct(x: f64) -> f64 {
-    x.powf(1./GAMMA_VALUE)
+    x.powf(1. / GAMMA_VALUE)
 }

@@ -33,7 +33,7 @@ pub fn vacuum() -> Material {
         shininess: 1.,
         reflectance: 0.,
         refractivity: 1.,
-        refraction_index: 1.
+        refraction_index: 1.,
     }
 }
 
@@ -46,7 +46,8 @@ pub fn reflective_material(reflectance: f64, color: Color) -> Material {
         specular: 0.1,
         shininess: 50.,
         refractivity: 0.,
-        .. vacuum() }
+        ..vacuum()
+    }
 }
 
 /// Creates a material that looks like glass.
@@ -57,7 +58,8 @@ pub fn glass() -> Material {
         specular: 0.1,
         shininess: 200.,
         color: white(),
-        .. vacuum() }
+        ..vacuum()
+    }
 }
 
 /// Creates a diffuse black material.
@@ -70,11 +72,11 @@ pub fn neutral_material() -> Material {
         shininess: 10.,
         reflectance: 0.,
         refractivity: 0.,
-        refraction_index: 1.
+        refraction_index: 1.,
     }
 }
 
 /// Creates a diffuse material of the given color.
 pub fn color_material(c: Color) -> Material {
-    Material { color: c, .. neutral_material()}
+    Material { color: c, ..neutral_material() }
 }

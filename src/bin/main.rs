@@ -46,20 +46,18 @@ fn single_sphere() -> Scene {
             horizontal_fov: 120_f64.to_radians(),
             aspect_ratio: 1.0,
             width: 360,
-            height: 360
+            height: 360,
         },
-        objects: vec![Box::new(
-            Sphere {
-                center: Vec3::zero(),
-                radius: 8.0,
-                material: color_material(Color::new(0.0, 0.0, 1.0))
-        })],
+        objects: vec![Box::new(Sphere {
+                          center: Vec3::zero(),
+                          radius: 8.0,
+                          material: color_material(Color::new(0.0, 0.0, 1.0)),
+                      })],
         ambient_color: white(),
-        lights: vec![
-            LightSource {
-                pos: Vec3::new(0.0, 10.0, 10.0),
-                col: white()
-        }]
+        lights: vec![LightSource {
+                         pos: Vec3::new(0.0, 10.0, 10.0),
+                         col: white(),
+                     }],
     }
 }
 
@@ -74,12 +72,12 @@ fn bunny() -> Scene {
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,
-        height: height
+        height: height,
     };
     let mesh = Mesh::from_obj_file("scenes/bunny.obj", material);
     let light = LightSource {
         pos: Vec3::new(0.0, 10.0, 10.0),
-        col: white()
+        col: white(),
     };
     return Scene {
         camera: camera,
@@ -87,7 +85,7 @@ fn bunny() -> Scene {
             Box::new(mesh.unwrap()),
             ],
         ambient_color: white(),
-        lights: vec![light]
+        lights: vec![light],
     };
 }
 
@@ -102,12 +100,12 @@ fn dragon() -> Scene {
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,
-        height: height
+        height: height,
     };
     let mesh = Mesh::from_obj_file("scenes/dragon.obj", material);
     let light = LightSource {
         pos: Vec3::new(0.0, 10.0, 10.0),
-        col: white()
+        col: white(),
     };
     return Scene {
         camera: camera,
@@ -115,7 +113,7 @@ fn dragon() -> Scene {
             Box::new(mesh.unwrap()),
             ],
         ambient_color: white(),
-        lights: vec![light]
+        lights: vec![light],
     };
 }
 
@@ -130,7 +128,7 @@ fn spheres() -> Scene {
         horizontal_fov: 120_f64.to_radians(),
         aspect_ratio: width as f64 / height as f64,
         width: width,
-        height: height
+        height: height,
     };
 
     // Objects:
@@ -152,19 +150,20 @@ fn spheres() -> Scene {
     let big_radius = 3.;
     let small_radius = 1.;
     let num_spheres = 8;
-    let mut objects: Vec<Box<Surface>> = (0..num_spheres).map(|i| {
-        let angle = (2 * i) as f64 * PI  / (num_spheres as f64);
-        Box::new(Sphere {
-            center: big_radius *
-                Vec3::new(angle.sin(), 0.0, angle.cos()) + small_radius * Vec3::e2(),
-            radius: small_radius,
-            material: color_material(Color::new(
-                (angle / 2.).sin(),
-                (angle / 2. + PI / 3.).sin().abs(),
-                (angle / 2. + PI / 1.5).sin().abs())),
-        }) as Box<Surface>
-    }).collect();
-    objects.push(Box::new(Sphere{
+    let mut objects: Vec<Box<Surface>> = (0..num_spheres)
+        .map(|i| {
+            let angle = (2 * i) as f64 * PI / (num_spheres as f64);
+            Box::new(Sphere {
+                center: big_radius * Vec3::new(angle.sin(), 0.0, angle.cos()) +
+                        small_radius * Vec3::e2(),
+                radius: small_radius,
+                material: color_material(Color::new((angle / 2.).sin(),
+                                                    (angle / 2. + PI / 3.).sin().abs(),
+                                                    (angle / 2. + PI / 1.5).sin().abs())),
+            }) as Box<Surface>
+        })
+        .collect();
+    objects.push(Box::new(Sphere {
         center: Vec3::new(0.0, big_radius / 2., 0.0),
         radius: big_radius / 2.,
         material: reflective_material(0.9, white()),
@@ -191,6 +190,6 @@ fn spheres() -> Scene {
         lights: vec![
             light,
             light2,
-            ]
-    }
+            ],
+    };
 }

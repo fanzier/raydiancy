@@ -24,7 +24,11 @@ pub trait Surface {
 pub trait SurfaceContainer {
     /// Returns information about the intersection of the object and the ray, if one exists.
     /// If the distance is greater that `t_max`, it returns `None`.
-    fn elem_intersect<'a>(&'a self, idx: usize, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection<'a>>;
+    fn elem_intersect<'a>(&'a self,
+                          idx: usize,
+                          ray: &'a Ray,
+                          t_max: f64)
+                          -> Option<DelayedIntersection<'a>>;
 
     /// Checks whether the ray intersects the object, computes no additional information.
     /// If the distance is greater than `t_max`, it returns `false`.

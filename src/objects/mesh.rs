@@ -9,7 +9,7 @@ use objects::triangle::{intersect_triangle, is_triangle_hit_by};
 
 /// Represents a triangle that is part of a mesh.
 struct Face {
-    pub vertex_indices: (usize, usize, usize)
+    pub vertex_indices: (usize, usize, usize),
 }
 
 impl Face {
@@ -24,12 +24,12 @@ impl Face {
 pub struct Mesh {
     vertices: Vec<Vec3>,
     faces: Vec<Face>,
-    material: Material
+    material: Material,
 }
 
 impl Mesh {
     fn face_vertices(&self, f: &Face) -> [&Vec3; 3] {
-        let (i,j,k) = f.vertex_indices;
+        let (i, j, k) = f.vertex_indices;
         [&self.vertices[i], &self.vertices[j], &self.vertices[k]]
     }
 
@@ -73,24 +73,25 @@ impl Mesh {
         }))
     }
 
-    fn parse3<'a, I, T>(tokens: &mut I) -> Option<(T,T,T)>
-        where I: Iterator<Item=&'a str>, T: FromStr
+    fn parse3<'a, I, T>(tokens: &mut I) -> Option<(T, T, T)>
+        where I: Iterator<Item = &'a str>,
+              T: FromStr
     {
-        tokens.next().and_then(|s| str::parse::<T>(s).ok()).and_then(|x|
-        tokens.next().and_then(|s| str::parse::<T>(s).ok()).and_then(|y|
-        tokens.next().and_then(|s| str::parse::<T>(s).ok()).map(|z| (x,y,z))))
+        tokens.next().and_then(|s| str::parse::<T>(s).ok()).and_then(|x| {
+            tokens.next().and_then(|s| str::parse::<T>(s).ok()).and_then(|y| {
+                tokens.next().and_then(|s| str::parse::<T>(s).ok()).map(|z| (x, y, z))
+            })
+        })
     }
 
     /// Computes the bounding box for the given face.
     fn bounding_box_face(&self, f: &Face) -> Aabb {
-        let min = self.face_vertices(f).iter().fold(
-            f64::INFINITY * Vec3::ones(),
-            |acc, &&item| acc.max(item)
-        );
-        let max = self.face_vertices(f).iter().fold(
-            -f64::INFINITY * Vec3::ones(),
-            |acc, &&item| acc.max(item)
-        );
+        let min = self.face_vertices(f)
+            .iter()
+            .fold(f64::INFINITY * Vec3::ones(), |acc, &&item| acc.max(item));
+        let max = self.face_vertices(f)
+            .iter()
+            .fold(-f64::INFINITY * Vec3::ones(), |acc, &&item| acc.max(item));
         Aabb::new(min, max)
     }
 }
@@ -104,7 +105,7 @@ impl Surface for Mesh {
             let a = *vertices[0];
             let b = *vertices[1];
             let c = *vertices[2];
-            intersect_triangle(a, b, c, ray, t_min).map(|(_,_,_,_,t)| {
+            intersect_triangle(a, b, c, ray, t_min).map(|(_, _, _, _, t)| {
                 t_min = t;
                 nearest_face = Some(face);
             });
@@ -113,10 +114,15 @@ impl Surface for Mesh {
             DelayedIntersection::new(t_min, move || {
                 let vertices = self.face_vertices(f);
                 // TODO: Interpolate normal if vertex normals are given.
-                let normal = (*vertices[1] - *vertices[0]).cross(*vertices[2] - *vertices[0]).normalize();
+                let normal =
+                    (*vertices[1] - *vertices[0]).cross(*vertices[2] - *vertices[0]).normalize();
                 // Make the normal vector point to the origin of the ray.
                 // This is important for the epsilon displacement for shadow and reflection rays.
-                let normal = if normal * ray.dir < 0. { normal } else { -normal };
+                let normal = if normal * ray.dir < 0. {
+                    normal
+                } else {
+                    -normal
+                };
                 Intersection::new(ray, t_min, normal, self.material)
             })
         })
@@ -129,7 +135,7 @@ impl Surface for Mesh {
             let b = *vertices[1];
             let c = *vertices[2];
             if is_triangle_hit_by(a, b, c, ray, t_max) {
-                return true
+                return true;
             }
         }
         false
@@ -137,17 +143,15 @@ impl Surface for Mesh {
 
     fn bounding_box(&self) -> Option<Aabb> {
         if self.faces.len() == 0 {
-            return None
+            return None;
         }
         let min = f64::INFINITY * Vec3::ones();
         let max = -f64::INFINITY * Vec3::ones();
-        let (min, max): (Vec3, Vec3)= self.faces.iter().fold(
-            (min,max),
-            |(acc_min, acc_max), item| {
+        let (min, max): (Vec3, Vec3) =
+            self.faces.iter().fold((min, max), |(acc_min, acc_max), item| {
                 let aabb = self.bounding_box_face(item);
                 (acc_min.min(aabb.min()), acc_max.max(aabb.max()))
-            }
-        );
+            });
         Some(Aabb::new(min, max))
     }
 }
@@ -155,22 +159,30 @@ impl Surface for Mesh {
 impl SurfaceContainer for Mesh {
     fn elem_is_hit_by(&self, i: usize, ray: &Ray, t_max: f64) -> bool {
         let vertices = self.face_vertices(&self.faces[i]);
-        return is_triangle_hit_by(*vertices[0], *vertices[1], *vertices[2], ray, t_max)
+        return is_triangle_hit_by(*vertices[0], *vertices[1], *vertices[2], ray, t_max);
     }
 
-    fn elem_intersect<'a>(&'a self, i: usize, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn elem_intersect<'a>(&'a self,
+                          i: usize,
+                          ray: &'a Ray,
+                          t_max: f64)
+                          -> Option<DelayedIntersection> {
         let ref face = self.faces[i];
         let vertices = self.face_vertices(face);
         let a = *vertices[0];
         let b = *vertices[1];
         let c = *vertices[2];
-        intersect_triangle(a, b, c, ray, t_max).map(|(_,_,_,_,t)| {
+        intersect_triangle(a, b, c, ray, t_max).map(|(_, _, _, _, t)| {
             DelayedIntersection::new(t, move || {
                 // TODO: Interpolate normal if vertex normals are given.
                 let normal = (b - a).cross(c - a).normalize();
                 // Make the normal vector point to the origin of the ray.
                 // This is important for the epsilon displacement for shadow and reflection rays.
-                let normal = if normal * ray.dir < 0. { normal } else { -normal };
+                let normal = if normal * ray.dir < 0. {
+                    normal
+                } else {
+                    -normal
+                };
                 Intersection::new(ray, t, normal, self.material)
             })
         })

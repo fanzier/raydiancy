@@ -22,16 +22,18 @@ struct BvhNode {
 }
 
 enum BvhTreeNode {
-    pub Leaf {
+    Leaf {
         objects: Vec<usize>,
     },
-    pub Branch {
+    Branch {
         left: BvhNode,
         right: BvhNode,
-    }
+    },
 }
 
-impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
+impl<ContainerType> Bvh<ContainerType>
+    where ContainerType: SurfaceContainer
+{
     /// Creates a BVH from a container.
     pub fn new(container: ContainerType) -> Bvh<ContainerType> {
         let mut unbounded_objects = vec![];
@@ -40,7 +42,7 @@ impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
             let aabb = container.elem_bounding_box(i);
             match aabb {
                 None => unbounded_objects.push(i),
-                Some(aabb) => aabbs.push((i,aabb)),
+                Some(aabb) => aabbs.push((i, aabb)),
             }
         }
         let root_node = BvhNode::new(&container, aabbs, MAX_DEPTH);
@@ -53,22 +55,26 @@ impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
 
     fn node_is_hit_by(&self, node: &BvhNode, ray: &Ray, t_max: f64) -> bool {
         if !node.bounding_box.passes_through(ray, t_max) {
-            return false
+            return false;
         }
         match *node.node {
             BvhTreeNode::Leaf { ref objects } => {
                 objects.iter().any(|&i| self.container.elem_is_hit_by(i, ray, t_max))
-            },
-            BvhTreeNode::Branch { ref left, ref right} => {
+            }
+            BvhTreeNode::Branch { ref left, ref right } => {
                 // TODO: Optimize: Check nearest node first and use t value for cutoff
                 self.node_is_hit_by(left, ray, t_max) && self.node_is_hit_by(right, ray, t_max)
-            },
+            }
         }
     }
 
-    fn node_intersect<'a>(&'a self, node: &'a BvhNode, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
+    fn node_intersect<'a>(&'a self,
+                          node: &'a BvhNode,
+                          ray: &'a Ray,
+                          t_max: f64)
+                          -> Option<DelayedIntersection> {
         if !node.bounding_box.passes_through(ray, t_max) {
-            return None
+            return None;
         }
         let (t_max, no_intersection) = if DEBUG_BVH {
             let i = node.bounding_box.intersect(ray, t_max);
@@ -86,34 +92,40 @@ impl<ContainerType> Bvh<ContainerType> where ContainerType: SurfaceContainer {
                 for &i in objects {
                     match self.container.elem_intersect(i, ray, nearest_t) {
                         None => continue,
-                        Some(inter) => if inter.t < nearest_t {
-                            nearest_t = inter.t;
-                            nearest_inter = Some(inter);
+                        Some(inter) => {
+                            if inter.t < nearest_t {
+                                nearest_t = inter.t;
+                                nearest_inter = Some(inter);
+                            }
                         }
                     }
                 }
-                return nearest_inter
-            },
-            BvhTreeNode::Branch { ref left, ref right} => {
-                let (near, far) =
-                    if left.bounding_box.distance(ray, t_max) < right.bounding_box.distance(ray, t_max) {
-                        (left, right)
-                    } else {
-                        (right, left)
-                    };
+                return nearest_inter;
+            }
+            BvhTreeNode::Branch { ref left, ref right } => {
+                let (near, far) = if left.bounding_box.distance(ray, t_max) <
+                                     right.bounding_box.distance(ray, t_max) {
+                    (left, right)
+                } else {
+                    (right, left)
+                };
                 match self.node_intersect(near, ray, t_max) {
                     None => self.node_intersect(far, ray, t_max).or(no_intersection),
-                    Some(near_inter) => match self.node_intersect(far, ray, near_inter.t) {
-                        None => Some(near_inter),
-                        Some(far_inter) => Some(far_inter)
+                    Some(near_inter) => {
+                        match self.node_intersect(far, ray, near_inter.t) {
+                            None => Some(near_inter),
+                            Some(far_inter) => Some(far_inter),
+                        }
                     }
                 }
-            },
+            }
         }
     }
 }
 
-impl<ContainerType> Surface for Bvh<ContainerType> where ContainerType: SurfaceContainer {
+impl<ContainerType> Surface for Bvh<ContainerType>
+    where ContainerType: SurfaceContainer
+{
     fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         self.node_is_hit_by(&self.root_node, ray, t_max)
     }
@@ -135,12 +147,13 @@ impl BvhNode {
     /// Creates a bounding volume hierarchy node,
     /// given a list of object indices with their bounding boxes.
     /// The node will recursively split until a depth of `max_depth`.
-    pub fn new<ContainerType>(container: &ContainerType, aabbs: Vec<(usize, Aabb)>, max_depth: usize) -> BvhNode {
-        let aabb = Aabb::union_all(&mut aabbs.iter().map(|&(_,b)| b));
+    pub fn new<ContainerType>(container: &ContainerType,
+                              aabbs: Vec<(usize, Aabb)>,
+                              max_depth: usize)
+                              -> BvhNode {
+        let aabb = Aabb::union_all(&mut aabbs.iter().map(|&(_, b)| b));
         let tree_node = if aabbs.len() < COUNT_THRESHOLD || max_depth <= 0 {
-            Box::new(BvhTreeNode::Leaf {
-                objects: aabbs.iter().map(|x| x.0).collect(),
-            })
+            Box::new(BvhTreeNode::Leaf { objects: aabbs.iter().map(|x| x.0).collect() })
         } else {
             let max = aabb.longest_side();
             let half = 0.5 * max.1 * Vec3::e(max.0);

@@ -12,16 +12,17 @@ pub struct Image {
     /// The height of the image in pixels.
     pub height: usize,
     /// The colors of each pixel, stored line by line in a one-dimensional vector.
-    pixels: Vec<AColor>
+    pixels: Vec<AColor>,
 }
 
 impl Image {
     /// Creates a new (transparent) image of the given dimensions.
     pub fn new(width: usize, height: usize) -> Image {
-        Image { width: width,
-                height: height,
-                pixels: vec![AColor::transparent(); width * height]
-              }
+        Image {
+            width: width,
+            height: height,
+            pixels: vec![AColor::transparent(); width * height],
+        }
     }
 
     /// Returns the color of the pixel at (x,y).
@@ -50,7 +51,12 @@ impl Image {
     /// // assert_eq!(img.get(255,255).r, 1.0);
     /// ```
     pub fn iter_mut(&mut self) -> ImageIterator {
-        ImageIterator { pixels: self.pixels.iter_mut(), width: self.width, x: 0, y: 0 }
+        ImageIterator {
+            pixels: self.pixels.iter_mut(),
+            width: self.width,
+            x: 0,
+            y: 0,
+        }
     }
 }
 
@@ -61,7 +67,7 @@ pub struct ImageIterator<'a> {
     pixels: slice::IterMut<'a, AColor>,
     x: usize,
     y: usize,
-    width: usize
+    width: usize,
 }
 
 impl<'a> Iterator for ImageIterator<'a> {
@@ -85,8 +91,8 @@ pub fn write_pixels_to_file(image: Image, filepath: &Path) {
     let mut output: RgbaImage = ImageBuffer::new(image.width as u32, image.height as u32);
     for (x, y, pixel) in output.enumerate_pixels_mut() {
         let c = image.get(x as usize, y as usize);
-        let (r,g,b,a) = c.to_rgba();
-        *pixel = Rgba([r,g,b,a]);
+        let (r, g, b, a) = c.to_rgba();
+        *pixel = Rgba([r, g, b, a]);
     }
     output.save(filepath).unwrap()
 }

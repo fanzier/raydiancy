@@ -5,15 +5,15 @@ use objects::surface::*;
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
-    pub material: Material
+    pub material: Material,
 }
 
 impl Surface for Sphere {
     fn intersect<'a>(&'a self, ray: &'a Ray, t_max: f64) -> Option<DelayedIntersection> {
         let x = ray.origin - self.center;
         let b = 2.0 * x * ray.dir;
-        let c = x.norm2() - self.radius*self.radius;
-        let discriminant = b*b - 4.0*c;
+        let c = x.norm2() - self.radius * self.radius;
+        let discriminant = b * b - 4.0 * c;
         if discriminant < 0.0 {
             return None;
         }
@@ -30,8 +30,8 @@ impl Surface for Sphere {
     fn is_hit_by(&self, ray: &Ray, t_max: f64) -> bool {
         let x = ray.origin - self.center;
         let b = 2.0 * x * ray.dir;
-        let c = x.norm2() - self.radius*self.radius;
-        let discriminant = b*b - 4.0*c;
+        let c = x.norm2() - self.radius * self.radius;
+        let discriminant = b * b - 4.0 * c;
         if discriminant < 0.0 {
             return false;
         }
@@ -43,9 +43,7 @@ impl Surface for Sphere {
     }
 
     fn bounding_box(&self) -> Option<Aabb> {
-        Some(Aabb::new(
-            self.center - self.radius * Vec3::ones(),
-            self.center + self.radius * Vec3::ones(),
-        ))
+        Some(Aabb::new(self.center - self.radius * Vec3::ones(),
+                       self.center + self.radius * Vec3::ones()))
     }
 }

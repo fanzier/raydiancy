@@ -17,7 +17,11 @@ pub const EPS: f64 = 0.0001;
 /// assert!(!appr(0.0,1.0));
 /// ```
 pub fn appr(f: f64, g: f64) -> bool {
-    if (f - g).abs() < EPS { true } else { false }
+    if (f - g).abs() < EPS {
+        true
+    } else {
+        false
+    }
 }
 
 /// Compares two f64 values for approximate value (up to `EPS`)
@@ -57,7 +61,7 @@ pub struct Vec3M<Marker: Clone> {
     phantom: PhantomData<Marker>,
 }
 
-impl<M: Clone> Copy for Vec3M<M> { }
+impl<M: Clone> Copy for Vec3M<M> {}
 
 #[derive(Debug, Copy, Clone)]
 struct VecMarker;
@@ -77,7 +81,7 @@ impl ops::Neg for UnitVec3 {
     fn neg(self) -> UnitVec3 {
         UnitVec3 {
             x: [-self.x[0], -self.x[1], -self.x[2]],
-            phantom: PhantomData
+            phantom: PhantomData,
         }
     }
 }
@@ -90,7 +94,10 @@ impl ops::Neg for Vec3 {
     }
 }
 
-impl<M,N> ops::Add<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+impl<M, N> ops::Add<Vec3M<N>> for Vec3M<M>
+    where M: Clone,
+          N: Clone
+{
     type Output = Vec3;
 
     fn add(self, b: Vec3M<N>) -> Vec3 {
@@ -98,7 +105,10 @@ impl<M,N> ops::Add<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     }
 }
 
-impl<M,N> ops::Sub<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+impl<M, N> ops::Sub<Vec3M<N>> for Vec3M<M>
+    where M: Clone,
+          N: Clone
+{
     type Output = Vec3;
 
     fn sub(self, b: Vec3M<N>) -> Vec3 {
@@ -106,7 +116,9 @@ impl<M,N> ops::Sub<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     }
 }
 
-impl<M> ops::Mul<Vec3M<M>> for f64 where M: Clone {
+impl<M> ops::Mul<Vec3M<M>> for f64
+    where M: Clone
+{
     type Output = Vec3;
 
     fn mul(self: f64, v: Vec3M<M>) -> Vec3 {
@@ -114,7 +126,10 @@ impl<M> ops::Mul<Vec3M<M>> for f64 where M: Clone {
     }
 }
 
-impl<M,N> ops::Mul<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+impl<M, N> ops::Mul<Vec3M<N>> for Vec3M<M>
+    where M: Clone,
+          N: Clone
+{
     type Output = f64;
 
     fn mul(self: Vec3M<M>, v: Vec3M<N>) -> f64 {
@@ -122,7 +137,9 @@ impl<M,N> ops::Mul<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
     }
 }
 
-impl<M> ops::Div<f64> for Vec3M<M> where M: Clone {
+impl<M> ops::Div<f64> for Vec3M<M>
+    where M: Clone
+{
     type Output = Vec3;
 
     fn div(self, s: f64) -> Vec3 {
@@ -131,7 +148,9 @@ impl<M> ops::Div<f64> for Vec3M<M> where M: Clone {
     }
 }
 
-impl<M> ops::Index<usize> for Vec3M<M> where M: Clone {
+impl<M> ops::Index<usize> for Vec3M<M>
+    where M: Clone
+{
     type Output = f64;
 
     fn index(&self, idx: usize) -> &f64 {
@@ -142,11 +161,14 @@ impl<M> ops::Index<usize> for Vec3M<M> where M: Clone {
 /// Compares vectors up to `EPS` (to take rounding errors into account).
 /// Note that this relation is *not transitive*.
 /// But it is still very useful because this property is often not needed.
-impl<M,N> cmp::PartialEq<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+impl<M, N> cmp::PartialEq<Vec3M<N>> for Vec3M<M>
+    where M: Clone,
+          N: Clone
+{
     fn eq(&self, v: &Vec3M<N>) -> bool {
         for i in 0..3 {
             if !appr(self.x[i], v.x[i]) {
-                return false
+                return false;
             }
         }
         true
@@ -156,7 +178,10 @@ impl<M,N> cmp::PartialEq<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
 /// Orders vectors up to `EPS` (to take rounding errors into account).
 /// Note that this relation is *not transitive*.
 /// But it is still very useful because this property is often not needed.
-impl<M, N> cmp::PartialOrd<Vec3M<N>> for Vec3M<M> where M: Clone, N: Clone {
+impl<M, N> cmp::PartialOrd<Vec3M<N>> for Vec3M<M>
+    where M: Clone,
+          N: Clone
+{
     fn partial_cmp(&self, v: &Vec3M<N>) -> Option<cmp::Ordering> {
         let cmps = [appr_cmp(self[0], v[0]), appr_cmp(self[1], v[1]), appr_cmp(self[2], v[2])];
         if cmps.iter().all(|&x| x == cmp::Ordering::Equal) {
@@ -175,7 +200,7 @@ impl<M: Clone> Vec3M<M> {
     /// Creates a vector with the given coordinates.
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 {
-            x: [x,y,z],
+            x: [x, y, z],
             phantom: PhantomData,
         }
     }
@@ -196,7 +221,10 @@ impl<M: Clone> Vec3M<M> {
     /// Creates a `UnitVec3` out of any given vector. Panics if its norm is not 1.0.
     pub fn assert_unit_vector(self: Vec3M<M>) -> UnitVec3 {
         assert!(appr(self.norm2(), 1.));
-        UnitVec3 { x: self.x, phantom: PhantomData }
+        UnitVec3 {
+            x: self.x,
+            phantom: PhantomData,
+        }
     }
 
     /// Returns the zero vector.
@@ -259,7 +287,10 @@ impl<M: Clone> Vec3M<M> {
     /// Returns the unit vector pointing in the same direction.
     pub fn normalize(self) -> UnitVec3 {
         let n = self / self.norm();
-        UnitVec3 { x: n.x, phantom: PhantomData }
+        UnitVec3 {
+            x: n.x,
+            phantom: PhantomData,
+        }
     }
 
     /// Computes the cross product of two vectors
@@ -274,19 +305,28 @@ impl<M: Clone> Vec3M<M> {
     /// assert_eq!(v * c, 0.0);
     /// assert_eq!(w * c, 0.0);
     /// ```
-    pub fn cross<N>(self, v: Vec3M<N>) -> Vec3 where M: Clone, N: Clone {
+    pub fn cross<N>(self, v: Vec3M<N>) -> Vec3
+        where M: Clone,
+              N: Clone
+    {
         Vec3::new(self.x[1] * v.x[2] - self.x[2] * v.x[1],
-            self.x[2] * v.x[0] - self.x[0] * v.x[2],
-            self.x[0] * v.x[1] - self.x[1] * v.x[0])
+                  self.x[2] * v.x[0] - self.x[0] * v.x[2],
+                  self.x[0] * v.x[1] - self.x[1] * v.x[0])
     }
 
     /// Returns the coordinate-wise maximum of the two vectors.
-    pub fn max<N>(self, v: Vec3M<N>) -> Vec3 where M: Clone, N: Clone {
+    pub fn max<N>(self, v: Vec3M<N>) -> Vec3
+        where M: Clone,
+              N: Clone
+    {
         Vec3::new(self[0].max(v[0]), self[1].max(v[1]), self[2].max(v[2]))
     }
 
     /// Returns the coordinate-wise minimum of the two vectors.
-    pub fn min<N>(self, v: Vec3M<N>) -> Vec3 where M: Clone, N: Clone {
+    pub fn min<N>(self, v: Vec3M<N>) -> Vec3
+        where M: Clone,
+              N: Clone
+    {
         Vec3::new(self[0].min(v[0]), self[1].min(v[1]), self[2].min(v[2]))
     }
 }
@@ -300,32 +340,39 @@ impl<M: Clone> Vec3M<M> {
 /// Only the <tt>( A b )</tt> part (3x4) of the matrix is stored.
 #[derive(Debug, Copy, Clone)]
 pub struct Matrix34 {
-    m: [[f64;4];3]
+    m: [[f64; 4]; 3],
 }
 
 impl ops::Mul<Matrix34> for Matrix34 {
     type Output = Matrix34;
 
     fn mul(self, b: Matrix34) -> Matrix34 {
-        let mut res: [[f64;4];3] = [[0.0; 4]; 3];
+        let mut res: [[f64; 4]; 3] = [[0.0; 4]; 3];
         for i in 0..3 {
             for k in 0..4 {
                 let mut entry: f64 = 0.0;
                 for j in 0..3 {
                     entry += self.m[i][j] * b.m[j][k]
                 }
-                res[i][k] = entry + if k == 3 { self.m[i][3] } else { 0.0 }
+                res[i][k] = entry +
+                            if k == 3 {
+                    self.m[i][3]
+                } else {
+                    0.0
+                }
             }
         }
         Matrix34 { m: res }
     }
 }
 
-impl<M> ops::Mul<Vec3M<M>> for Matrix34 where M: Clone {
+impl<M> ops::Mul<Vec3M<M>> for Matrix34
+    where M: Clone
+{
     type Output = Vec3;
 
     fn mul(self, v: Vec3M<M>) -> Vec3 {
-        let mut res: [f64;3] = [0.0; 3];
+        let mut res: [f64; 3] = [0.0; 3];
         for i in 0..3 {
             let mut entry: f64 = 0.0;
             for j in 0..3 {
@@ -342,8 +389,8 @@ impl cmp::PartialEq for Matrix34 {
     fn eq(&self, b: &Matrix34) -> bool {
         for i in 0..3 {
             for j in 0..4 {
-                if !appr(self.m[i][j],b.m[i][j]) {
-                    return false
+                if !appr(self.m[i][j], b.m[i][j]) {
+                    return false;
                 }
             }
         }
@@ -362,9 +409,7 @@ impl Matrix34 {
     /// assert_eq!(Matrix34::scale(v) * v, Vec3::new(1.0,4.0,9.0));
     /// ```
     pub fn scale(v: Vec3) -> Matrix34 {
-        Matrix34 {
-            m: [[v[0], 0.0, 0.0, 0.0], [0.0, v[1], 0.0, 0.0], [0.0, 0.0, v[2], 0.0]]
-        }
+        Matrix34 { m: [[v[0], 0.0, 0.0, 0.0], [0.0, v[1], 0.0, 0.0], [0.0, 0.0, v[2], 0.0]] }
     }
 
     /// Creates a translation matrix
@@ -378,9 +423,7 @@ impl Matrix34 {
     /// assert_eq!(translate_along_e3 * e1, Vec3::new(1.0,0.0,1.0));
     /// ```
     pub fn translate(v: Vec3) -> Matrix34 {
-        Matrix34 {
-            m: [[1.0, 0.0, 0.0, v[0]], [0.0, 1.0, 0.0, v[1]], [0.0, 0.0, 1.0, v[2]]]
-        }
+        Matrix34 { m: [[1.0, 0.0, 0.0, v[0]], [0.0, 1.0, 0.0, v[1]], [0.0, 0.0, 1.0, v[2]]] }
     }
 
     /// Creates a rotation matrix
@@ -395,24 +438,19 @@ impl Matrix34 {
     /// ```
     pub fn rotate(axis: Vec3, angle: f64) -> Matrix34 {
         let u = axis.normalize();
-        Matrix34{
-            m: [
-                  [ angle.cos()+u[0]*u[0]*(1.0 - angle.cos()),
-                    u[0]*u[1]*(1.0-angle.cos()) - u[2]*angle.sin(),
-                    u[0]*u[2]*(1.0-angle.cos()) + u[1]*angle.sin(),
-                    0.0
-                  ],
-                  [ u[1]*u[0]*(1.0-angle.cos()) + u[2]*angle.sin(),
-                    angle.cos()+u[1]*u[1]*(1.0 - angle.cos()),
-                    u[1]*u[2]*(1.0-angle.cos()) - u[0]*angle.sin(),
-                    0.0
-                  ],
-                  [ u[2]*u[0]*(1.0-angle.cos()) - u[1]*angle.sin(),
-                    u[2]*u[1]*(1.0-angle.cos()) + u[0]*angle.sin(),
-                    angle.cos()+u[2]*u[2]*(1.0 - angle.cos()),
-                    0.0
-                  ]
-                ]
+        Matrix34 {
+            m: [[angle.cos() + u[0] * u[0] * (1.0 - angle.cos()),
+                 u[0] * u[1] * (1.0 - angle.cos()) - u[2] * angle.sin(),
+                 u[0] * u[2] * (1.0 - angle.cos()) + u[1] * angle.sin(),
+                 0.0],
+                [u[1] * u[0] * (1.0 - angle.cos()) + u[2] * angle.sin(),
+                 angle.cos() + u[1] * u[1] * (1.0 - angle.cos()),
+                 u[1] * u[2] * (1.0 - angle.cos()) - u[0] * angle.sin(),
+                 0.0],
+                [u[2] * u[0] * (1.0 - angle.cos()) - u[1] * angle.sin(),
+                 u[2] * u[1] * (1.0 - angle.cos()) + u[0] * angle.sin(),
+                 angle.cos() + u[2] * u[2] * (1.0 - angle.cos()),
+                 0.0]],
         }
     }
 
@@ -432,7 +470,7 @@ impl Matrix34 {
     /// }
     /// ```
     pub fn transpose(&self) -> Matrix34 {
-        let mut res: [[f64;4];3] = [[0.0;4];3];
+        let mut res: [[f64; 4]; 3] = [[0.0; 4]; 3];
         for i in 0..3 {
             for j in 0..3 {
                 res[i][j] = self.m[j][i]
@@ -441,7 +479,7 @@ impl Matrix34 {
         for i in 0..3 {
             res[i][3] = self.m[i][3]
         }
-        Matrix34{ m: res }
+        Matrix34 { m: res }
     }
 
     /// Identity matrix
@@ -459,8 +497,7 @@ impl Matrix34 {
     /// assert!(appr(Matrix34::rotate(Vec3::new(1.0,2.0,3.0),1.0).determinant(), 1.0));
     /// ```
     pub fn determinant(&self) -> f64 {
-        self.m[0][0] * self.m[1][1] * self.m[2][2] +
-        self.m[0][1] * self.m[1][2] * self.m[2][0] +
+        self.m[0][0] * self.m[1][1] * self.m[2][2] + self.m[0][1] * self.m[1][2] * self.m[2][0] +
         self.m[0][2] * self.m[1][0] * self.m[2][1] -
         self.m[0][0] * self.m[1][2] * self.m[2][1] -
         self.m[0][1] * self.m[1][0] * self.m[2][2] -
@@ -473,41 +510,34 @@ impl Matrix34 {
     /// ```
     /// use raydiancy::lin_alg::*;
     /// assert_eq!(Matrix34::identity().invert(), Matrix34::identity());
-    /// assert_eq!(Matrix34::scale(Vec3::new(1.0,2.0,4.0)).invert(), Matrix34::scale(Vec3::new(1.0,0.5,0.25)));
+    /// assert_eq!(Matrix34::scale(Vec3::new(1.0,2.0,4.0)).invert(),
+    ///     Matrix34::scale(Vec3::new(1.0,0.5,0.25)));
     /// let v = Vec3::new(1.0,2.0,3.0);
     /// let angle = 0.5;
     /// assert_eq!(Matrix34::rotate(v, angle).invert(), Matrix34::rotate(v, -angle));
     /// assert_eq!(Matrix34::translate(v).invert(), Matrix34::translate(-v));
     /// let w = Vec3::new(1.0,0.5,1.0/3.0);
-    /// assert_eq!((Matrix34::translate(v) * Matrix34::scale(v)).invert(), Matrix34::scale(w) * Matrix34::translate(-v));
+    /// assert_eq!((Matrix34::translate(v) * Matrix34::scale(v)).invert(),
+    ///     Matrix34::scale(w) * Matrix34::translate(-v));
     /// ```
     pub fn invert(&self) -> Matrix34 {
         let d = self.determinant();
         let ref a = self.m;
-        let mut b =
-            [
-                [
-                    (a[1][1] * a[2][2] - a[1][2] * a[2][1]) / d,
-                    (a[0][2] * a[2][1] - a[2][2] * a[0][1]) / d,
-                    (a[0][1] * a[1][2] - a[1][1] * a[0][2]) / d,
-                    0.0
-                ],
-                [
-                    (a[1][2] * a[2][0] - a[2][2] * a[1][0]) / d,
-                    (a[0][0] * a[2][2] - a[2][0] * a[0][2]) / d,
-                    (a[0][2] * a[1][0] - a[1][2] * a[0][0]) / d,
-                    0.0
-                ],
-                [
-                    (a[1][0] * a[2][1] - a[2][0] * a[1][1]) / d,
-                    (a[0][1] * a[2][0] - a[2][1] * a[0][0]) / d,
-                    (a[0][0] * a[1][1] - a[1][0] * a[0][1]) / d,
-                    0.0
-                ]
-            ];
-        b[0][3] = - (b[0][0] * a[0][3] + b[0][1] * a[1][3] + b[0][2] * a[2][3]);
-        b[1][3] = - (b[1][0] * a[0][3] + b[1][1] * a[1][3] + b[1][2] * a[2][3]);
-        b[2][3] = - (b[2][0] * a[0][3] + b[2][1] * a[1][3] + b[2][2] * a[2][3]);
+        let mut b = [[(a[1][1] * a[2][2] - a[1][2] * a[2][1]) / d,
+                      (a[0][2] * a[2][1] - a[2][2] * a[0][1]) / d,
+                      (a[0][1] * a[1][2] - a[1][1] * a[0][2]) / d,
+                      0.0],
+                     [(a[1][2] * a[2][0] - a[2][2] * a[1][0]) / d,
+                      (a[0][0] * a[2][2] - a[2][0] * a[0][2]) / d,
+                      (a[0][2] * a[1][0] - a[1][2] * a[0][0]) / d,
+                      0.0],
+                     [(a[1][0] * a[2][1] - a[2][0] * a[1][1]) / d,
+                      (a[0][1] * a[2][0] - a[2][1] * a[0][0]) / d,
+                      (a[0][0] * a[1][1] - a[1][0] * a[0][1]) / d,
+                      0.0]];
+        b[0][3] = -(b[0][0] * a[0][3] + b[0][1] * a[1][3] + b[0][2] * a[2][3]);
+        b[1][3] = -(b[1][0] * a[0][3] + b[1][1] * a[1][3] + b[1][2] * a[2][3]);
+        b[2][3] = -(b[2][0] * a[0][3] + b[2][1] * a[1][3] + b[2][2] * a[2][3]);
         Matrix34 { m: b }
     }
 }

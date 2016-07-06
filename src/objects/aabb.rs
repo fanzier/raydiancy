@@ -3,7 +3,11 @@ use basic::*;
 
 /// Helper function for intersection test.
 fn sign(f: f64) -> usize {
-    if f < 0. { 1 } else { 0 }
+    if f < 0. {
+        1
+    } else {
+        0
+    }
 }
 
 /// The material used when drawing bounding boxes for debugging purposes.
@@ -16,14 +20,14 @@ fn bounding_box_material() -> Material {
         shininess: 1.,
         reflectance: 0.,
         refractivity: 0.95,
-        refraction_index: 1.
+        refraction_index: 1.,
     }
 }
 
 /// Represents an axis-aligned bounding box.
 #[derive(Copy, Clone, Debug)]
 pub struct Aabb {
-    vertices: [Vec3; 2]
+    vertices: [Vec3; 2],
 }
 
 impl Aabb {
@@ -35,7 +39,7 @@ impl Aabb {
     /// Creates an empty axis-aligned bounding box.
     /// It is the neutral element of `Aabb::union`.
     pub fn empty() -> Aabb {
-        Aabb { vertices: [f64::INFINITY * Vec3::ones(), -f64::INFINITY * Vec3::ones()]}
+        Aabb { vertices: [f64::INFINITY * Vec3::ones(), -f64::INFINITY * Vec3::ones()] }
     }
 
     /// Returns the vertex with smallest coordinates.
@@ -54,7 +58,8 @@ impl Aabb {
     /// use raydiancy::basic::*;
     /// use raydiancy::objects::aabb::*;
     /// assert!(Aabb::new(Vec3::zero(), Vec3::ones()).contains(&Aabb::empty()));
-    /// assert!(Aabb::new(Vec3::zero(), Vec3::ones()).contains(&Aabb::new(Vec3::zero(), 0.5 * Vec3::ones())));
+    /// assert!(Aabb::new(Vec3::zero(), Vec3::ones())
+    ///     .contains(&Aabb::new(Vec3::zero(), 0.5 * Vec3::ones())));
     // ```
     pub fn contains(&self, b: &Aabb) -> bool {
         self.vertices[0] <= b.vertices[0] && b.vertices[1] <= self.vertices[1]
@@ -67,18 +72,16 @@ impl Aabb {
 
     /// Returns the tightest bounding box around the union of the two given ones.
     pub fn union(&self, b: &Aabb) -> Aabb {
-        Aabb { vertices: [
-            self.vertices[0].min(b.vertices[0]),
-            self.vertices[1].max(b.vertices[1])
-            ],
+        Aabb {
+            vertices: [self.vertices[0].min(b.vertices[0]), self.vertices[1].max(b.vertices[1])],
         }
     }
 
     /// Given an iterator of bounding boxes, returns the tightest box around their union.
-    pub fn union_all<T>(boxes: &mut T) -> Aabb where T: Iterator<Item=Aabb> {
-        boxes.fold(Aabb::empty(), |acc, ref aabb| {
-            acc.union(aabb)
-        })
+    pub fn union_all<T>(boxes: &mut T) -> Aabb
+        where T: Iterator<Item = Aabb>
+    {
+        boxes.fold(Aabb::empty(), |acc, ref aabb| acc.union(aabb))
     }
 
     /// Returns the vector from the smallest vertex to the largest vertex.
@@ -111,11 +114,11 @@ impl Aabb {
         let r_inv = Vec3::new(1. / r.dir[0], 1. / r.dir[1], 1. / r.dir[2]);
         let sign = [sign(r_inv[0]), sign(r_inv[1]), sign(r_inv[2])];
         let mut tmin = (self.vertices[sign[0]].x() - r.origin.x()) * r_inv.x();
-        let mut tmax = (self.vertices[1-sign[0]].x() - r.origin.x()) * r_inv.x();
+        let mut tmax = (self.vertices[1 - sign[0]].x() - r.origin.x()) * r_inv.x();
         let tymin = (self.vertices[sign[1]].y() - r.origin.y()) * r_inv.y();
-        let tymax = (self.vertices[1-sign[1]].y() - r.origin.y()) * r_inv.y();
+        let tymax = (self.vertices[1 - sign[1]].y() - r.origin.y()) * r_inv.y();
         if (tmin > tymax) || (tymin > tmax) {
-            return false
+            return false;
         }
         if tymin > tmin {
             tmin = tymin
@@ -124,7 +127,7 @@ impl Aabb {
             tmax = tymax;
         }
         let tzmin = (self.vertices[sign[2]].z() - r.origin.z()) * r_inv.z();
-        let tzmax = (self.vertices[1-sign[2]].z() - r.origin.z()) * r_inv.z();
+        let tzmax = (self.vertices[1 - sign[2]].z() - r.origin.z()) * r_inv.z();
         if (tmin > tzmax) || (tzmin > tmax) {
             return false;
         }
@@ -147,9 +150,9 @@ impl Aabb {
         let r_inv = Vec3::new(1. / r.dir[0], 1. / r.dir[1], 1. / r.dir[2]);
         let sign = [sign(r_inv[0]), sign(r_inv[1]), sign(r_inv[2])];
         let mut tmin = (self.vertices[sign[0]].x() - r.origin.x()) * r_inv.x();
-        let mut tmax = (self.vertices[1-sign[0]].x() - r.origin.x()) * r_inv.x();
+        let mut tmax = (self.vertices[1 - sign[0]].x() - r.origin.x()) * r_inv.x();
         let tymin = (self.vertices[sign[1]].y() - r.origin.y()) * r_inv.y();
-        let tymax = (self.vertices[1-sign[1]].y() - r.origin.y()) * r_inv.y();
+        let tymax = (self.vertices[1 - sign[1]].y() - r.origin.y()) * r_inv.y();
         if (tmin > tymax) || (tymin > tmax) {
             return f64::INFINITY;
         }
@@ -160,7 +163,7 @@ impl Aabb {
             tmax = tymax;
         }
         let tzmin = (self.vertices[sign[2]].z() - r.origin.z()) * r_inv.z();
-        let tzmax = (self.vertices[1-sign[2]].z() - r.origin.z()) * r_inv.z();
+        let tzmax = (self.vertices[1 - sign[2]].z() - r.origin.z()) * r_inv.z();
         if (tmin > tzmax) || (tzmin > tmax) {
             return f64::INFINITY;
         }
@@ -193,11 +196,11 @@ impl Aabb {
         let mut imin = 0;
         let mut imax = 0;
         let mut tmin = (self.vertices[sign[0]].x() - r.origin.x()) * r_inv.x();
-        let mut tmax = (self.vertices[1-sign[0]].x() - r.origin.x()) * r_inv.x();
+        let mut tmax = (self.vertices[1 - sign[0]].x() - r.origin.x()) * r_inv.x();
         let tymin = (self.vertices[sign[1]].y() - r.origin.y()) * r_inv.y();
-        let tymax = (self.vertices[1-sign[1]].y() - r.origin.y()) * r_inv.y();
+        let tymax = (self.vertices[1 - sign[1]].y() - r.origin.y()) * r_inv.y();
         if (tmin > tymax) || (tymin > tmax) {
-            return None
+            return None;
         }
         if tymin > tmin {
             tmin = tymin;
@@ -208,7 +211,7 @@ impl Aabb {
             imax = 1;
         }
         let tzmin = (self.vertices[sign[2]].z() - r.origin.z()) * r_inv.z();
-        let tzmax = (self.vertices[1-sign[2]].z() - r.origin.z()) * r_inv.z();
+        let tzmax = (self.vertices[1 - sign[2]].z() - r.origin.z()) * r_inv.z();
         if (tmin > tzmax) || (tzmin > tmax) {
             return None;
         }
@@ -221,14 +224,15 @@ impl Aabb {
             imax = 2;
         }
         if tmax < EPS || tmin > t1 {
-            return None
+            return None;
         }
-        let (normal,t) = if tmin > EPS {
+        let (normal, t) = if tmin > EPS {
             (-Vec3::e(imin), tmin)
         } else if tmax < t1 {
             (Vec3::e(imax), tmax)
-        } else { // The part from EPS to t1 of the ray is completely inside the box:
-            return None
+        } else {
+            // The part from EPS to t1 of the ray is completely inside the box:
+            return None;
         };
         let inter = Intersection::new(r, t, normal.assert_unit_vector(), bounding_box_material());
         Some(DelayedIntersection::new(t, move || inter))
